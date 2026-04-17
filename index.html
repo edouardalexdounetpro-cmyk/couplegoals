@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0f0f14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CoupleGoals" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="css/styles.css" />
+  <title>CoupleGoals</title>
+</head>
+<body>
+  <div id="profile-gate" class="profile-gate">
+    <div class="gate-card">
+      <h1 class="gate-title">CoupleGoals</h1>
+      <p class="gate-sub">Qui utilise l'app ?</p>
+      <div class="gate-buttons">
+        <button class="profile-btn profile-edouard" data-user="edouard">
+          <span class="avatar">E</span>
+          <span class="name">Edouard</span>
+          <span class="meta">90 kg · 176 cm</span>
+        </button>
+        <button class="profile-btn profile-elsa" data-user="elsa">
+          <span class="avatar">E</span>
+          <span class="name">Elsa</span>
+          <span class="meta">64 kg · 163,5 cm</span>
+        </button>
+      </div>
+      <button class="link-btn" id="couple-view-btn">Vue couple</button>
+    </div>
+  </div>
+
+  <header class="app-header" hidden>
+    <div class="header-left">
+      <button class="avatar-btn" id="switch-user-btn" aria-label="Changer d'utilisateur">
+        <span class="avatar-mini" id="header-avatar">E</span>
+      </button>
+      <div>
+        <div class="header-name" id="header-name">Edouard</div>
+        <div class="header-sub" id="header-sub">Objectif -750 g / semaine</div>
+      </div>
+    </div>
+    <button class="icon-btn" id="settings-btn" aria-label="Paramètres">⚙</button>
+  </header>
+
+  <main id="main" class="main" hidden>
+    <section class="view" data-view="dashboard"></section>
+    <section class="view" data-view="meals" hidden></section>
+    <section class="view" data-view="weight" hidden></section>
+    <section class="view" data-view="workouts" hidden></section>
+    <section class="view" data-view="settings" hidden></section>
+  </main>
+
+  <nav class="tabbar" hidden>
+    <button class="tab active" data-view="dashboard">
+      <span class="tab-icon">◉</span>
+      <span class="tab-label">Accueil</span>
+    </button>
+    <button class="tab" data-view="meals">
+      <span class="tab-icon">🍽</span>
+      <span class="tab-label">Repas</span>
+    </button>
+    <button class="tab tab-fab" data-view="meals" data-action="quick-add">
+      <span class="fab">+</span>
+    </button>
+    <button class="tab" data-view="weight">
+      <span class="tab-icon">⚖</span>
+      <span class="tab-label">Poids</span>
+    </button>
+    <button class="tab" data-view="workouts">
+      <span class="tab-icon">💪</span>
+      <span class="tab-label">Sport</span>
+    </button>
+  </nav>
+
+  <div id="toast" class="toast" hidden></div>
+  <div id="modal" class="modal" hidden>
+    <div class="modal-sheet" id="modal-sheet"></div>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/views.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
