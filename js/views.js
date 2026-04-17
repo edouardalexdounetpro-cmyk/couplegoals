@@ -227,6 +227,169 @@
     `;
   }
 
+  // ---- Calendar ----
+  const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+  const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+  function renderCalendar(userId, monthOffset = 0) {
+    const today = new Date();
+    const ref = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+    const year = ref.getFullYear();
+    const month = ref.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startDow = (firstDay.getDay() + 6) % 7; // Mon = 0
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const cells = [];
+    for (let i = 0; i < startDow; i++) cells.push(null);
+    for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+    while (cells.length % 7 !== 0) cells.push(null);
+
+    const showBoth = userId === 'couple';
+    const viewUsers = showBoth ? ['edouard', 'elsa'] : [userId];
+
+    return `
+      <div class="section-title">Calendrier</div>
+      <div class="cal-header">
+        <button class="icon-btn" data-cal-nav="-1">‹</button>
+        <div class="cal-title">${MONTHS_FR[month]} ${year}</div>
+        <button class="icon-btn" data-cal-nav="1">›</button>
+      </div>
+      <div class="cal-dow">${DAYS_FR.map(d => `<div>${d}</div>`).join('')}</div>
+      <div class="cal-grid">
+        ${cells.map(c => calCell(c, viewUsers, today)).join('')}
+      </div>
+      <div class="cal-legend">
+        <span><i class="dot ok"></i> Objectif tenu</span>
+        <span><i class="dot warn"></i> Limite</span>
+        <span><i class="dot bad"></i> Dépassé</span>
+        <span>⏰ Écart planifié</span>
+      </div>
+      ${renderPlannedThisMonth(ref, userId)}
+    `;
+  }
+
+  function calCell(date, users, today) {
+    if (!date) return '<div class="cal-cell empty"></div>';
+    const isToday = date.toDateString() === today.toDateString();
+    const isFuture = date > today && !isToday;
+    let dots = '';
+    const logged = [];
+    for (const u of users) {
+      const s = DB.dayStatus(u, date);
+      if (s !== 'none') {
+        const cls = s === 'hit' ? 'ok' : s === 'close' ? 'warn' : 'bad';
+        dots += `<i class="dot ${cls}"></i>`;
+        logged.push(u);
+      }
+    }
+    const planned = users.flatMap(u => DB.plannedCheatsForDay(date, u));
+    const cheated = users.flatMap(u => DB.dayMeals(u, date).filter(m => m.isCheat));
+    const ymd = DB.ymd(date);
+    return `<button class="cal-cell ${isToday ? 'today' : ''} ${isFuture ? 'future' : ''}" data-day="${ymd}">
+      <div class="cal-num">${date.getDate()}</div>
+      <div class="cal-dots">${dots}</div>
+      <div class="cal-emoji">${cheated.map(c => DB.CHEAT_LIMITS[c.cheatType]?.emoji || '⚠').join('')}${planned.map(p => '⏰').join('')}</div>
+    </button>`;
+  }
+
+  function renderPlannedThisMonth(ref, userId) {
+    const list = DB.plannedCheatsInMonth(ref, userId).slice().sort((a, b) => a.date.localeCompare(b.date));
+    if (!list.length) return '';
+    return `
+      <div class="section-title">Écarts planifiés ce mois</div>
+      <div class="entry-list">
+        ${list.map(p => {
+          const def = DB.CHEAT_LIMITS[p.cheatType] || { emoji: '⚠', label: p.cheatType };
+          const u = DB.state.users[p.userId]?.name || p.userId;
+          return `<div class="entry" data-planned-id="${p.id}">
+            <div class="entry-thumb">${def.emoji}</div>
+            <div class="entry-main">
+              <div class="entry-title">${def.label} · ${u}</div>
+              <div class="entry-sub">${fmtDate(p.date)}${p.note ? ' · ' + esc(p.note) : ''}</div>
+            </div>
+            <div class="entry-right"><span class="tag cheat">planifié</span></div>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  function dayDetailForm(dateYmd) {
+    const date = new Date(dateYmd + 'T12:00:00');
+    const isPast = date < DB.startOfDay(new Date());
+    const userIds = ['edouard', 'elsa'];
+    let html = `
+      <button class="sheet-close" data-close>×</button>
+      <h2 class="sheet-title">${date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
+    `;
+    for (const uid of userIds) {
+      const u = DB.state.users[uid];
+      const meals = DB.dayMeals(uid, date);
+      const kcal = meals.reduce((s, m) => s + (m.calories || 0), 0);
+      const target = DB.dailyTarget(u);
+      const workouts = DB.dayWorkouts(uid, date);
+      const planned = DB.plannedCheatsForDay(date, uid);
+      const cheats = meals.filter(m => m.isCheat);
+      const status = DB.dayStatus(uid, date);
+      const statusLabel = { hit: '✅ objectif', close: '⚠ limite', over: '❌ dépassé', none: '— aucune saisie' }[status];
+      html += `
+        <div class="card" style="border-left:3px solid var(--${uid})">
+          <div class="card-row">
+            <div>
+              <div class="card-title">${u.name}</div>
+              <div class="card-sub">${fmt(kcal)}/${fmt(target)} kcal · ${statusLabel}</div>
+            </div>
+            <button class="btn small" data-plan="${uid}" data-date="${dateYmd}">+ Écart</button>
+          </div>
+          ${planned.length ? `<div style="margin-top:10px" class="entry-list">
+            ${planned.map(p => {
+              const def = DB.CHEAT_LIMITS[p.cheatType] || { emoji: '⚠', label: p.cheatType };
+              return `<div class="entry" data-planned-id="${p.id}">
+                <div class="entry-thumb">${def.emoji}⏰</div>
+                <div class="entry-main">
+                  <div class="entry-title">${def.label}</div>
+                  <div class="entry-sub">planifié${p.note ? ' · ' + esc(p.note) : ''}</div>
+                </div>
+                <div class="entry-right"><button class="btn small danger" data-del-planned="${p.id}">✕</button></div>
+              </div>`;
+            }).join('')}
+          </div>` : ''}
+          ${cheats.length ? `<div style="margin-top:10px">
+            ${cheats.map(m => {
+              const def = DB.CHEAT_LIMITS[m.cheatType] || { emoji: '⚠' };
+              return `<span class="tag cheat" style="margin-right:4px">${def.emoji} ${esc(m.title)}</span>`;
+            }).join('')}
+          </div>` : ''}
+          ${meals.length ? `<div style="margin-top:10px;font-size:13px;color:var(--text-dim)">
+            ${meals.length} repas${workouts.length ? ' · ' + workouts.length + ' séance' + (workouts.length > 1 ? 's' : '') : ''}
+          </div>` : ''}
+        </div>
+      `;
+    }
+    return html;
+  }
+
+  function plannedCheatForm(userId, dateYmd) {
+    const u = DB.state.users[userId];
+    const cheats = Object.entries(DB.CHEAT_LIMITS);
+    return `
+      <button class="sheet-close" data-close>×</button>
+      <h2 class="sheet-title">Planifier un écart · ${u.name}</h2>
+      <div class="card-sub" style="margin-bottom:14px">Le ${fmtDate(dateYmd)}</div>
+      <div class="field">
+        <label>Type d'écart</label>
+        <div class="chip-row" id="planned-type-chips">
+          ${cheats.map(([k, v]) => `<div class="chip" data-type="${k}">${v.emoji} ${v.label}</div>`).join('')}
+        </div>
+      </div>
+      <div class="field">
+        <label>Note (optionnel)</label>
+        <input type="text" id="planned-note" placeholder="ex: anniversaire de Paul" />
+      </div>
+      <button class="btn primary block" id="save-planned" data-user="${userId}" data-date="${dateYmd}">Planifier</button>
+    `;
+  }
+
   function renderWorkoutEntry(w) {
     const user = DB.state.users[w.userId]?.name || '';
     return `<div class="entry" data-workout-id="${w.id}">
@@ -323,20 +486,16 @@
         <label>Description du repas</label>
         <textarea id="meal-title" rows="2" placeholder="ex: Poulet rôti, riz, brocolis"></textarea>
       </div>
-      <div class="row">
-        <div class="field">
-          <label>Calories</label>
-          <input type="number" id="meal-calories" placeholder="ex: 650" />
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button class="btn small" id="ai-estimate">🤖 Estimer</button>
-        </div>
-      </div>
       <div class="field">
         <label>Photo de l'assiette (optionnel)</label>
         <input type="file" id="meal-photo" accept="image/*" capture="environment" />
         <div id="meal-photo-preview" class="muted" style="font-size:12px"></div>
+      </div>
+      <button type="button" class="btn ai block" id="ai-estimate">🤖 Estimer les calories avec l'IA</button>
+      <div id="ai-feedback" class="ai-feedback" hidden></div>
+      <div class="field" style="margin-top:14px">
+        <label>Calories</label>
+        <input type="number" id="meal-calories" placeholder="saisir ou estimer via IA" />
       </div>
       <div class="field">
         <label>Écart autorisé ?</label>
@@ -420,7 +579,9 @@
 
   global.Views = {
     renderDashboard, renderMeals, renderWeight, renderWorkouts, renderSettings,
+    renderCalendar,
     mealForm, weightForm, photoForm, workoutForm, photoViewer,
+    dayDetailForm, plannedCheatForm,
     fmt, fmtDate, fmtDateTime, esc
   };
 })(window);

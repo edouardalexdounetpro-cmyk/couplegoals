@@ -12,6 +12,7 @@
   const sheet = $('#modal-sheet');
 
   let currentView = 'dashboard';
+  let calMonthOffset = 0;
 
   function init() {
     if (DB.state.currentUser) {
@@ -28,6 +29,10 @@
 
   function bindMainDelegation() {
     main.addEventListener('click', async (e) => {
+      const nav = e.target.closest('[data-cal-nav]');
+      if (nav) { calMonthOffset += parseInt(nav.dataset.calNav); renderView('calendar'); return; }
+      const cell = e.target.closest('[data-day]');
+      if (cell) { openDayDetail(cell.dataset.day); return; }
       const meal = e.target.closest('[data-meal-id]');
       if (meal) { openMealActions(meal.dataset.mealId); return; }
       const wk = e.target.closest('[data-workout-id]');
@@ -128,6 +133,7 @@
     const host = views.find(v => v.dataset.view === name);
     const uid = DB.state.currentUser;
     if (name === 'dashboard') host.innerHTML = Views.renderDashboard(uid);
+    else if (name === 'calendar') host.innerHTML = Views.renderCalendar(uid, calMonthOffset);
     else if (name === 'meals') host.innerHTML = Views.renderMeals(uid);
     else if (name === 'weight') host.innerHTML = Views.renderWeight(uid);
     else if (name === 'workouts') host.innerHTML = Views.renderWorkouts(uid);
@@ -200,20 +206,40 @@
 
     $('#ai-estimate', sheet).addEventListener('click', async (ev) => {
       ev.preventDefault();
+      ev.stopPropagation();
+      const btn = sheet.querySelector('#ai-estimate');
+      const fb = sheet.querySelector('#ai-feedback');
       const desc = $('#meal-title', sheet).value.trim();
-      if (!desc && !photoBlob) { showToast('Décris le repas ou ajoute une photo'); return; }
+      if (!desc && !photoBlob) {
+        fb.hidden = false;
+        fb.className = 'ai-feedback err';
+        fb.textContent = 'Écris une description ou ajoute une photo d\'abord.';
+        return;
+      }
+      if (!DB.state.settings.aiApiKey) {
+        fb.hidden = false;
+        fb.className = 'ai-feedback err';
+        fb.textContent = 'Ajoute ta clé API Anthropic dans ⚙ Paramètres.';
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = '🔄 Analyse en cours…';
+      fb.hidden = false;
+      fb.className = 'ai-feedback info';
+      fb.textContent = 'Appel à Claude en cours…';
       try {
-        ev.target.textContent = '…';
-        ev.target.disabled = true;
         const res = photoBlob ? await AI.estimateFromPhoto(photoBlob, desc) : await AI.estimateFromText(desc);
         $('#meal-calories', sheet).value = res.calories;
         if (!desc && res.items?.length) $('#meal-title', sheet).value = res.items.map(i => `${i.name} ${i.qty || ''}`.trim()).join(', ');
-        showToast(`~${res.calories} kcal (${res.confidence || 'medium'})`);
+        fb.className = 'ai-feedback ok';
+        const items = (res.items || []).map(i => `• ${i.name}${i.qty ? ' (' + i.qty + ')' : ''} — ${i.kcal || '?'} kcal`).join('<br>');
+        fb.innerHTML = `<strong>≈ ${res.calories} kcal</strong> · confiance ${res.confidence || 'medium'}${items ? '<br><br>' + items : ''}${res.notes ? '<br><em>' + Views.esc(res.notes) + '</em>' : ''}`;
       } catch (err) {
-        showToast(err.message || 'Erreur IA');
+        fb.className = 'ai-feedback err';
+        fb.textContent = 'Erreur : ' + (err.message || err);
       } finally {
-        ev.target.textContent = '🤖 Estimer';
-        ev.target.disabled = false;
+        btn.disabled = false;
+        btn.textContent = '🤖 Estimer les calories avec l\'IA';
       }
     });
 
@@ -256,6 +282,40 @@
       closeModal();
       renderView(currentView);
       showToast('Supprimé');
+    });
+  }
+
+  // ---- CALENDAR / DAY DETAIL ----
+  function openDayDetail(ymd) {
+    openModal(Views.dayDetailForm(ymd));
+    sheet.addEventListener('click', (e) => {
+      const plan = e.target.closest('[data-plan]');
+      if (plan) { openPlannedCheatSheet(plan.dataset.plan, plan.dataset.date); return; }
+      const del = e.target.closest('[data-del-planned]');
+      if (del) {
+        DB.deletePlannedCheat(del.dataset.delPlanned);
+        openDayDetail(ymd);
+        renderView(currentView);
+        return;
+      }
+    });
+  }
+
+  function openPlannedCheatSheet(userId, dateYmd) {
+    openModal(Views.plannedCheatForm(userId, dateYmd));
+    let selectedType = '';
+    chipGroup('#planned-type-chips', 'type', v => selectedType = v);
+    $('#save-planned', sheet).addEventListener('click', () => {
+      if (!selectedType) { showToast('Choisis un type'); return; }
+      DB.addPlannedCheat({
+        userId,
+        date: dateYmd,
+        cheatType: selectedType,
+        note: $('#planned-note', sheet).value.trim()
+      });
+      closeModal();
+      showToast('Écart planifié');
+      renderView(currentView);
     });
   }
 

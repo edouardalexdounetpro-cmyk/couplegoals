@@ -29,7 +29,8 @@
     meals: [],     // { id, userId, date(ISO), kind, title, calories, photoId, isCheat, cheatType, notes }
     weights: [],   // { id, userId, date, weight, photoId }
     photos: [],    // { id, userId, date, photoId, note } (progress photos)
-    workouts: []   // { id, userId, date, type, duration, calories, notes }
+    workouts: [],  // { id, userId, date, type, duration, calories, notes }
+    plannedCheats: [] // { id, userId, date(YYYY-MM-DD), cheatType, note }
   };
 
   const CHEAT_LIMITS = {
@@ -52,7 +53,8 @@
         ...DEFAULT_STATE,
         ...parsed,
         users: { ...DEFAULT_STATE.users, ...(parsed.users || {}) },
-        settings: { ...DEFAULT_STATE.settings, ...(parsed.settings || {}) }
+        settings: { ...DEFAULT_STATE.settings, ...(parsed.settings || {}) },
+        plannedCheats: parsed.plannedCheats || []
       };
     } catch (e) {
       console.warn('state load failed', e);
@@ -244,6 +246,60 @@
     state.workouts.splice(i, 1); save();
   }
 
+  // --- Planned cheats (calendar planning, shared per device) ---
+  function ymd(d) {
+    const x = new Date(d);
+    return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+  }
+  function addPlannedCheat(entry) {
+    const e = { id: uid(), ...entry, date: ymd(entry.date) };
+    if (!state.plannedCheats) state.plannedCheats = [];
+    state.plannedCheats.push(e); save(); return e;
+  }
+  function deletePlannedCheat(id) {
+    if (!state.plannedCheats) return;
+    const i = state.plannedCheats.findIndex(x => x.id === id); if (i < 0) return;
+    state.plannedCheats.splice(i, 1); save();
+  }
+  function plannedCheatsForDay(day, userId) {
+    const k = ymd(day);
+    return (state.plannedCheats || []).filter(p => p.date === k && (!userId || userId === 'couple' || p.userId === userId));
+  }
+  function plannedCheatsInMonth(date, userId) {
+    const m = new Date(date).getMonth(), y = new Date(date).getFullYear();
+    return (state.plannedCheats || []).filter(p => {
+      const d = new Date(p.date);
+      return d.getMonth() === m && d.getFullYear() === y
+        && (!userId || userId === 'couple' || p.userId === userId);
+    });
+  }
+
+  // Day status: 'hit' | 'close' | 'over' | 'none'
+  function dayStatus(userId, day) {
+    const u = state.users[userId]; if (!u) return 'none';
+    const kcal = caloriesForDay(userId, day);
+    if (kcal === 0) return 'none';
+    const target = dailyTarget(u);
+    if (kcal <= target * 1.05) return 'hit';
+    if (kcal <= target * 1.15) return 'close';
+    return 'over';
+  }
+  function dayMeals(userId, day) {
+    const d = startOfDay(day);
+    const next = new Date(d); next.setDate(d.getDate() + 1);
+    const list = userId === 'couple'
+      ? state.meals.filter(m => new Date(m.date) >= d && new Date(m.date) < next)
+      : mealsFor(userId, d, next);
+    return list.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+  function dayWorkouts(userId, day) {
+    const d = startOfDay(day);
+    const next = new Date(d); next.setDate(d.getDate() + 1);
+    return state.workouts.filter(w =>
+      new Date(w.date) >= d && new Date(w.date) < next
+      && (userId === 'couple' || w.userId === userId));
+  }
+
   function setUser(id) { state.currentUser = id; save(); }
   function setSetting(key, value) { state.settings[key] = value; save(); }
   function updateUserProfile(id, patch) {
@@ -264,6 +320,9 @@
     cheatUsage, cheatSummary,
     latestWeight, startingWeight, nextWeighIn, nextPhoto,
     bmr, tdee, dailyDeficit, dailyTarget,
-    startOfDay, startOfMonth, startOfWeek, sameDay, daysBetween
+    startOfDay, startOfMonth, startOfWeek, sameDay, daysBetween,
+    ymd, addPlannedCheat, deletePlannedCheat,
+    plannedCheatsForDay, plannedCheatsInMonth,
+    dayStatus, dayMeals, dayWorkouts
   };
 })(window);
