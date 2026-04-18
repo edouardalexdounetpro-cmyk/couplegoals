@@ -140,7 +140,10 @@
       .slice().sort((a, b) => new Date(b.date) - new Date(a.date));
     return `
       <div class="section-title">Repas</div>
-      <button class="btn primary block" id="add-meal-btn">+ Ajouter un repas</button>
+      <div class="row">
+        <button class="btn primary" id="add-meal-btn">+ Ajouter un repas</button>
+        <button class="btn ai" id="recipe-btn">🍳 Recette IA</button>
+      </div>
       <div style="height:12px"></div>
       ${list.length ? `<div class="entry-list">${list.map(renderMealEntry).join('')}</div>` : `<div class="empty">Aucun repas. Commence par ajouter ton premier.</div>`}
     `;
@@ -176,10 +179,29 @@
           </div>
         </div>
         ${weightChart(uid)}
+        ${weightList(uid)}
         ${photoStrip(uid)}
       `;
     }
     return html;
+  }
+
+  function weightList(userId) {
+    const list = DB.state.weights.filter(w => w.userId === userId).slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    if (!list.length) return '';
+    return `<div class="card">
+      <div class="card-title">Historique</div>
+      <div class="entry-list" style="margin-top:10px">
+        ${list.map(w => `<div class="entry" data-weight-id="${w.id}">
+          <div class="entry-thumb">⚖</div>
+          <div class="entry-main">
+            <div class="entry-title">${fmt(w.weight, 1)} kg</div>
+            <div class="entry-sub">${fmtDateTime(w.date)}${w.photoId ? ' · 📷' : ''}</div>
+          </div>
+          <div class="entry-right"><span class="tag">éditer</span></div>
+        </div>`).join('')}
+      </div>
+    </div>`;
   }
 
   function weightChart(userId) {
@@ -206,7 +228,7 @@
     return `<div class="card">
       <div class="card-title">Photos de progression</div>
       <div class="photo-strip">
-        ${list.map(p => `<div class="photo-thumb" data-photo="${p.photoId}"><div class="date">${fmtDate(p.date)}</div></div>`).join('')}
+        ${list.map(p => `<div class="photo-thumb" data-photo="${p.photoId}" data-progress-id="${p.id}"><div class="date">${fmtDate(p.date)}</div></div>`).join('')}
       </div>
     </div>`;
   }
@@ -463,12 +485,14 @@
   }
 
   // ---- Modal builders ----
-  function mealForm({ prefillKind } = {}) {
-    const userId = DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser;
+  function mealForm({ prefillKind, existing } = {}) {
+    const userId = existing?.userId || (DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser);
+    const kind = existing?.kind || prefillKind || '';
     const cheats = Object.entries(DB.CHEAT_LIMITS);
+    const cheatSel = existing?.isCheat ? (existing.cheatType || '') : '';
     return `
       <button class="sheet-close" data-close>×</button>
-      <h2 class="sheet-title">Nouveau repas</h2>
+      <h2 class="sheet-title">${existing ? 'Modifier le repas' : 'Nouveau repas'}</h2>
       <div class="field">
         <label>Pour qui ?</label>
         <div class="chip-row" id="meal-user-chips">
@@ -479,49 +503,51 @@
       <div class="field">
         <label>Type</label>
         <div class="chip-row" id="meal-kind-chips">
-          ${['breakfast', 'lunch', 'dinner', 'snack'].map(k => `<div class="chip ${prefillKind === k ? 'active' : ''}" data-kind="${k}">${ { breakfast: 'Petit-déj', lunch: 'Déj', dinner: 'Dîner', snack: 'Snack' }[k] }</div>`).join('')}
+          ${['breakfast', 'lunch', 'dinner', 'snack'].map(k => `<div class="chip ${kind === k ? 'active' : ''}" data-kind="${k}">${ { breakfast: 'Petit-déj', lunch: 'Déj', dinner: 'Dîner', snack: 'Snack' }[k] }</div>`).join('')}
         </div>
       </div>
       <div class="field">
         <label>Description du repas</label>
-        <textarea id="meal-title" rows="2" placeholder="ex: Poulet rôti, riz, brocolis"></textarea>
+        <textarea id="meal-title" rows="2" placeholder="ex: Poulet rôti, riz, brocolis">${esc(existing?.title || '')}</textarea>
       </div>
       <div class="field">
         <label>Photo de l'assiette (optionnel)</label>
         <input type="file" id="meal-photo" accept="image/*" capture="environment" />
-        <div id="meal-photo-preview" class="muted" style="font-size:12px"></div>
+        <div id="meal-photo-preview" class="muted" style="font-size:12px">${existing?.photoId ? '📎 photo déjà attachée (sélectionner un nouveau fichier pour remplacer)' : ''}</div>
       </div>
       <button type="button" class="btn ai block" id="ai-estimate">🤖 Estimer les calories avec l'IA</button>
       <div id="ai-feedback" class="ai-feedback" hidden></div>
       <div class="field" style="margin-top:14px">
         <label>Calories</label>
-        <input type="number" id="meal-calories" placeholder="saisir ou estimer via IA" />
+        <input type="number" id="meal-calories" placeholder="saisir ou estimer via IA" value="${existing?.calories ?? ''}" />
       </div>
       <div class="field">
         <label>Écart autorisé ?</label>
         <div class="chip-row" id="meal-cheat-chips">
-          <div class="chip active" data-cheat="">Non</div>
-          ${cheats.map(([k, v]) => `<div class="chip" data-cheat="${k}">${v.emoji} ${v.label}</div>`).join('')}
+          <div class="chip ${!cheatSel ? 'active' : ''}" data-cheat="">Non</div>
+          ${cheats.map(([k, v]) => `<div class="chip ${cheatSel === k ? 'active' : ''}" data-cheat="${k}">${v.emoji} ${v.label}</div>`).join('')}
         </div>
       </div>
-      <button class="btn primary block" id="save-meal">Enregistrer</button>
+      <button class="btn primary block" id="save-meal">${existing ? 'Mettre à jour' : 'Enregistrer'}</button>
     `;
   }
 
-  function weightForm(userId) {
+  function weightForm(userId, existing) {
     const u = DB.state.users[userId];
     return `
       <button class="sheet-close" data-close>×</button>
-      <h2 class="sheet-title">Pesée · ${u.name}</h2>
+      <h2 class="sheet-title">${existing ? 'Modifier la pesée' : 'Pesée'} · ${u.name}</h2>
       <div class="field">
         <label>Poids (kg)</label>
-        <input type="number" step="0.1" id="weight-value" value="${u.weight}" />
+        <input type="number" step="0.1" id="weight-value" value="${existing?.weight ?? u.weight}" />
       </div>
       <div class="field">
         <label>Photo (optionnel, pour la pesée)</label>
         <input type="file" id="weight-photo" accept="image/*" capture="environment" />
+        ${existing?.photoId ? '<div class="muted" style="font-size:12px">📎 photo déjà attachée</div>' : ''}
       </div>
-      <button class="btn primary block" id="save-weight" data-user="${userId}">Enregistrer</button>
+      <button class="btn primary block" id="save-weight" data-user="${userId}" ${existing ? `data-edit="${existing.id}"` : ''}>${existing ? 'Mettre à jour' : 'Enregistrer'}</button>
+      ${existing ? `<div style="height:10px"></div><button class="btn danger block" id="delete-weight" data-id="${existing.id}">Supprimer cette pesée</button>` : ''}
     `;
   }
 
@@ -542,11 +568,14 @@
     `;
   }
 
-  function workoutForm() {
-    const userId = DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser;
+  function workoutForm(existing) {
+    const userId = existing?.userId || (DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser);
+    const types = ['Course', 'Vélo', 'Muscu', 'Marche', 'Natation', 'HIIT', 'Yoga', 'Autre'];
+    const preType = existing?.type ? (types.find(t => existing.type.includes(t)) || '') : '';
+    const customDetail = existing?.type ? existing.type.replace(preType, '').replace(/^\s*·\s*/, '').trim() : '';
     return `
       <button class="sheet-close" data-close>×</button>
-      <h2 class="sheet-title">Séance de sport</h2>
+      <h2 class="sheet-title">${existing ? 'Modifier la séance' : 'Séance de sport'}</h2>
       <div class="field">
         <label>Pour qui ?</label>
         <div class="chip-row" id="wk-user-chips">
@@ -555,25 +584,95 @@
         </div>
       </div>
       <div class="field">
+        <label>Décrire en langage naturel (optionnel)</label>
+        <textarea id="wk-desc" rows="2" placeholder="ex: 35 min de course modérée + 15 min d'étirements"></textarea>
+      </div>
+      <button type="button" class="btn ai block" id="ai-workout">🤖 Estimer durée + calories via l'IA</button>
+      <div id="ai-wk-feedback" class="ai-feedback" hidden></div>
+      <div class="field" style="margin-top:14px">
         <label>Type d'activité</label>
         <div class="chip-row" id="wk-type-chips">
-          ${['Course', 'Vélo', 'Muscu', 'Marche', 'Natation', 'HIIT', 'Yoga', 'Autre'].map(t => `<div class="chip" data-type="${t}">${t}</div>`).join('')}
+          ${types.map(t => `<div class="chip ${preType === t ? 'active' : ''}" data-type="${t}">${t}</div>`).join('')}
         </div>
-        <input type="text" id="wk-type-custom" placeholder="Détail (optionnel)" />
+        <input type="text" id="wk-type-custom" placeholder="Détail (optionnel)" value="${esc(customDetail)}" />
       </div>
       <div class="row">
-        <div class="field"><label>Durée (min)</label><input type="number" id="wk-duration" placeholder="45" /></div>
-        <div class="field"><label>Calories</label><input type="number" id="wk-calories" placeholder="optionnel" /></div>
+        <div class="field"><label>Durée (min)</label><input type="number" id="wk-duration" placeholder="45" value="${existing?.duration ?? ''}" /></div>
+        <div class="field"><label>Calories</label><input type="number" id="wk-calories" placeholder="optionnel" value="${existing?.calories ?? ''}" /></div>
       </div>
-      <button class="btn primary block" id="save-workout">Enregistrer</button>
+      <button class="btn primary block" id="save-workout" ${existing ? `data-edit="${existing.id}"` : ''}>${existing ? 'Mettre à jour' : 'Enregistrer'}</button>
+      ${existing ? `<div style="height:10px"></div><button class="btn danger block" id="delete-workout" data-id="${existing.id}">Supprimer cette séance</button>` : ''}
     `;
   }
 
-  function photoViewer(photoId) {
+  function photoViewer(photoId, progressId) {
     return `
       <button class="sheet-close" data-close>×</button>
       <h2 class="sheet-title">Photo</h2>
       <div id="photo-viewer-img" style="min-height:300px;display:grid;place-items:center">Chargement…</div>
+      ${progressId ? `<div style="height:14px"></div><button class="btn danger block" id="delete-progress-photo" data-id="${progressId}">Supprimer cette photo</button>` : ''}
+    `;
+  }
+
+  function recipeForm() {
+    const userId = DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser;
+    const u = DB.state.users[userId];
+    const target = DB.dailyTarget(u);
+    const intake = DB.caloriesToday(userId);
+    const remaining = Math.max(250, target - intake);
+    return `
+      <button class="sheet-close" data-close>×</button>
+      <h2 class="sheet-title">🍳 Recette IA</h2>
+      <div class="card-sub" style="margin-bottom:14px">Propose une recette qui respecte tes aliments autorisés et ton objectif de fonte.</div>
+      <div class="field">
+        <label>Pour qui ?</label>
+        <div class="chip-row" id="recipe-user-chips">
+          <div class="chip ${userId === 'edouard' ? 'active' : ''}" data-user="edouard">Edouard</div>
+          <div class="chip ${userId === 'elsa' ? 'active' : ''}" data-user="elsa">Elsa</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Type de repas</label>
+        <div class="chip-row" id="recipe-kind-chips">
+          ${[['breakfast', 'Petit-déj'], ['lunch', 'Déj'], ['dinner', 'Dîner'], ['snack', 'Snack']].map(([k, l]) => `<div class="chip" data-kind="${k}">${l}</div>`).join('')}
+        </div>
+      </div>
+      <div class="field">
+        <label>Calories cibles</label>
+        <input type="number" id="recipe-kcal" value="${remaining}" />
+        <div class="card-sub" style="margin-top:4px">Reste du jour ≈ ${fmt(target - intake)} kcal · cible jour ${fmt(target)} kcal</div>
+      </div>
+      <div class="field">
+        <label>Envie particulière (optionnel)</label>
+        <input type="text" id="recipe-hint" placeholder="ex: pâtes, asiatique, léger..." />
+      </div>
+      <button type="button" class="btn ai block" id="recipe-generate">🍳 Générer une recette</button>
+      <div id="recipe-feedback" class="ai-feedback" hidden></div>
+      <div id="recipe-result" hidden></div>
+    `;
+  }
+
+  function recipeResult(recipe) {
+    return `
+      <div class="card" style="margin-top:14px">
+        <div class="card-title">${esc(recipe.title || 'Recette')}</div>
+        <div class="card-sub">${recipe.calories || '?'} kcal · ${recipe.prep_min || 0} min prépa · ${recipe.cook_min || 0} min cuisson</div>
+        ${recipe.summary ? `<div style="margin-top:10px;font-size:13px">${esc(recipe.summary)}</div>` : ''}
+        ${recipe.macros ? `<div style="margin-top:10px;font-size:12px;color:var(--text-dim)">Prot. ${recipe.macros.protein_g || 0}g · Gluc. ${recipe.macros.carbs_g || 0}g · Lip. ${recipe.macros.fat_g || 0}g</div>` : ''}
+      </div>
+      <div class="card">
+        <div class="card-title">Ingrédients</div>
+        <ul style="margin:10px 0 0;padding-left:20px;font-size:14px;line-height:1.6">
+          ${(recipe.ingredients || []).map(i => `<li>${esc(i.name)}${i.qty ? ' — ' + esc(i.qty) : ''}</li>`).join('')}
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Étapes</div>
+        <ol style="margin:10px 0 0;padding-left:20px;font-size:14px;line-height:1.6">
+          ${(recipe.steps || []).map(s => `<li style="margin-bottom:6px">${esc(s)}</li>`).join('')}
+        </ol>
+      </div>
+      <button class="btn primary block" id="recipe-log-meal" data-kcal="${recipe.calories || 0}" data-title="${esc(recipe.title || 'Recette')}">+ Ajouter comme repas consommé</button>
     `;
   }
 
@@ -582,6 +681,7 @@
     renderCalendar,
     mealForm, weightForm, photoForm, workoutForm, photoViewer,
     dayDetailForm, plannedCheatForm,
+    recipeForm, recipeResult,
     fmt, fmtDate, fmtDateTime, esc
   };
 })(window);

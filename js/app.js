@@ -37,8 +37,10 @@
       if (meal) { openMealActions(meal.dataset.mealId); return; }
       const wk = e.target.closest('[data-workout-id]');
       if (wk) { openWorkoutActions(wk.dataset.workoutId); return; }
+      const wg = e.target.closest('[data-weight-id]');
+      if (wg) { openWeightEdit(wg.dataset.weightId); return; }
       const ph = e.target.closest('[data-photo]');
-      if (ph && ph.dataset.photo) { openPhotoViewer(ph.dataset.photo); return; }
+      if (ph && ph.dataset.photo) { openPhotoViewer(ph.dataset.photo, ph.dataset.progressId); return; }
       const act = e.target.closest('[data-action]');
       if (act) {
         if (act.dataset.action === 'log-weight') openWeightSheet(act.dataset.user);
@@ -47,6 +49,7 @@
       }
       if (e.target.closest('#add-meal-btn')) openMealSheet();
       if (e.target.closest('#add-workout-btn')) openWorkoutSheet();
+      if (e.target.closest('#recipe-btn')) openRecipeSheet();
     });
   }
 
@@ -188,10 +191,11 @@
 
   // ---- MEAL ----
   function openMealSheet(prefill = {}) {
+    const existing = prefill.existing;
     openModal(Views.mealForm(prefill));
-    let selectedUser = DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser;
-    let selectedKind = prefill.prefillKind || '';
-    let selectedCheat = '';
+    let selectedUser = existing?.userId || (DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser);
+    let selectedKind = existing?.kind || prefill.prefillKind || '';
+    let selectedCheat = existing?.isCheat ? (existing.cheatType || '') : '';
     let photoBlob = null;
 
     chipGroup('#meal-user-chips', 'user', v => selectedUser = v);
@@ -247,19 +251,27 @@
       const title = $('#meal-title', sheet).value.trim();
       const calories = parseInt($('#meal-calories', sheet).value) || 0;
       if (!title) { showToast('Décris le repas'); return; }
-      let photoId = null;
-      if (photoBlob) photoId = await DB.savePhoto(photoBlob);
-      DB.addMeal({
+      let photoId = existing?.photoId || null;
+      if (photoBlob) {
+        if (existing?.photoId) await DB.deletePhoto(existing.photoId);
+        photoId = await DB.savePhoto(photoBlob);
+      }
+      const patch = {
         userId: selectedUser,
         kind: selectedKind || 'snack',
         title, calories,
         photoId,
         isCheat: !!selectedCheat,
         cheatType: selectedCheat || null
-      });
-      if (selectedCheat) Notifications.onCheatLogged(selectedUser, selectedCheat);
+      };
+      if (existing) {
+        DB.updateMeal(existing.id, patch);
+      } else {
+        DB.addMeal(patch);
+        if (selectedCheat) Notifications.onCheatLogged(selectedUser, selectedCheat);
+      }
       closeModal();
-      showToast('Repas enregistré');
+      showToast(existing ? 'Repas mis à jour' : 'Repas enregistré');
       renderView(currentView);
     });
   }
@@ -272,12 +284,19 @@
       <div class="card-sub">${Views.fmtDateTime(m.date)} · ${Views.fmt(m.calories)} kcal${m.isCheat ? ' · écart' : ''}</div>
       ${m.photoId ? `<div id="meal-photo-preview-big" style="margin-top:14px;border-radius:12px;overflow:hidden"></div>` : ''}
       <div style="height:14px"></div>
+      <button class="btn primary block" id="edit-meal">✏️ Modifier</button>
+      <div style="height:8px"></div>
       <button class="btn danger block" id="del-meal">Supprimer</button>
     `);
     if (m.photoId) DB.photoUrl(m.photoId).then(url => {
       if (url) $('#meal-photo-preview-big', sheet).innerHTML = `<img src="${url}" style="width:100%;display:block" />`;
     });
+    $('#edit-meal', sheet).addEventListener('click', () => {
+      closeModal();
+      openMealSheet({ existing: m });
+    });
     $('#del-meal', sheet).addEventListener('click', async () => {
+      if (!confirm('Supprimer ce repas ?')) return;
       await DB.deleteMeal(id);
       closeModal();
       renderView(currentView);
@@ -320,19 +339,40 @@
   }
 
   // ---- WEIGHT ----
-  function openWeightSheet(userId) {
-    openModal(Views.weightForm(userId));
+  function openWeightSheet(userId, existing) {
+    openModal(Views.weightForm(userId, existing));
     $('#save-weight', sheet).addEventListener('click', async () => {
       const v = parseFloat($('#weight-value', sheet).value);
       if (isNaN(v)) { showToast('Poids invalide'); return; }
       const ph = $('#weight-photo', sheet).files[0];
-      let photoId = ph ? await DB.savePhoto(ph) : null;
-      DB.addWeight({ userId, weight: v, photoId });
+      let photoId = existing?.photoId || null;
+      if (ph) {
+        if (existing?.photoId) await DB.deletePhoto(existing.photoId);
+        photoId = await DB.savePhoto(ph);
+      }
+      if (existing) {
+        DB.updateWeight(existing.id, { weight: v, photoId });
+      } else {
+        DB.addWeight({ userId, weight: v, photoId });
+      }
       DB.updateUserProfile(userId, { weight: v });
       closeModal();
-      showToast('Pesée enregistrée');
+      showToast(existing ? 'Pesée mise à jour' : 'Pesée enregistrée');
       renderView(currentView);
     });
+    const delBtn = $('#delete-weight', sheet);
+    if (delBtn) delBtn.addEventListener('click', async () => {
+      if (!confirm('Supprimer cette pesée ?')) return;
+      await DB.deleteWeight(delBtn.dataset.id);
+      closeModal();
+      showToast('Supprimée');
+      renderView(currentView);
+    });
+  }
+
+  function openWeightEdit(id) {
+    const w = DB.state.weights.find(x => x.id === id); if (!w) return;
+    openWeightSheet(w.userId, w);
   }
 
   function openPhotoSheet(userId) {
@@ -348,47 +388,139 @@
     });
   }
 
-  function openPhotoViewer(photoId) {
-    openModal(Views.photoViewer(photoId));
+  function openPhotoViewer(photoId, progressId) {
+    openModal(Views.photoViewer(photoId, progressId));
     DB.photoUrl(photoId).then(url => {
       if (url) $('#photo-viewer-img', sheet).innerHTML = `<img src="${url}" style="width:100%;border-radius:12px" />`;
+    });
+    const delBtn = $('#delete-progress-photo', sheet);
+    if (delBtn) delBtn.addEventListener('click', async () => {
+      if (!confirm('Supprimer cette photo ?')) return;
+      await DB.deleteProgressPhoto(delBtn.dataset.id);
+      closeModal();
+      showToast('Supprimée');
+      renderView(currentView);
     });
   }
 
   // ---- WORKOUT ----
-  function openWorkoutSheet() {
-    openModal(Views.workoutForm());
-    let selectedUser = DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser;
+  function openWorkoutSheet(existing) {
+    openModal(Views.workoutForm(existing));
+    let selectedUser = existing?.userId || (DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser);
     let selectedType = '';
     chipGroup('#wk-user-chips', 'user', v => selectedUser = v);
     chipGroup('#wk-type-chips', 'type', v => selectedType = v);
+
+    $('#ai-workout', sheet).addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      const btn = $('#ai-workout', sheet);
+      const fb = $('#ai-wk-feedback', sheet);
+      const desc = $('#wk-desc', sheet).value.trim();
+      if (!desc) {
+        fb.hidden = false; fb.className = 'ai-feedback err';
+        fb.textContent = 'Décris ta séance (ex: "35 min de course modérée").';
+        return;
+      }
+      if (!DB.state.settings.aiApiKey) {
+        fb.hidden = false; fb.className = 'ai-feedback err';
+        fb.textContent = 'Ajoute ta clé API Anthropic dans ⚙ Paramètres.';
+        return;
+      }
+      btn.disabled = true; btn.textContent = '🔄 Analyse…';
+      fb.hidden = false; fb.className = 'ai-feedback info';
+      fb.textContent = 'Appel à Claude…';
+      try {
+        const user = DB.state.users[selectedUser];
+        const res = await AI.estimateWorkout(desc, user);
+        if (res.type) $('#wk-type-custom', sheet).value = res.type;
+        if (res.duration) $('#wk-duration', sheet).value = res.duration;
+        if (res.calories) $('#wk-calories', sheet).value = res.calories;
+        fb.className = 'ai-feedback ok';
+        fb.innerHTML = `<strong>${Views.esc(res.type)}</strong> · ${res.duration} min · ≈ ${res.calories} kcal${res.notes ? '<br><em>' + Views.esc(res.notes) + '</em>' : ''}`;
+      } catch (err) {
+        fb.className = 'ai-feedback err';
+        fb.textContent = 'Erreur : ' + (err.message || err);
+      } finally {
+        btn.disabled = false; btn.textContent = '🤖 Estimer durée + calories via l\'IA';
+      }
+    });
+
     $('#save-workout', sheet).addEventListener('click', () => {
       const custom = $('#wk-type-custom', sheet).value.trim();
       const type = [selectedType, custom].filter(Boolean).join(' · ') || 'Séance';
       const duration = parseInt($('#wk-duration', sheet).value) || 0;
       const calories = parseInt($('#wk-calories', sheet).value) || 0;
       if (!duration) { showToast('Durée manquante'); return; }
-      DB.addWorkout({ userId: selectedUser, type, duration, calories });
+      const patch = { userId: selectedUser, type, duration, calories };
+      if (existing) DB.updateWorkout(existing.id, patch);
+      else DB.addWorkout(patch);
       closeModal();
-      showToast('Séance enregistrée');
+      showToast(existing ? 'Séance mise à jour' : 'Séance enregistrée');
+      renderView(currentView);
+    });
+
+    const delBtn = $('#delete-workout', sheet);
+    if (delBtn) delBtn.addEventListener('click', () => {
+      if (!confirm('Supprimer cette séance ?')) return;
+      DB.deleteWorkout(delBtn.dataset.id);
+      closeModal();
+      showToast('Supprimée');
       renderView(currentView);
     });
   }
 
   function openWorkoutActions(id) {
     const w = DB.state.workouts.find(x => x.id === id); if (!w) return;
-    openModal(`
-      <button class="sheet-close" data-close>×</button>
-      <h2 class="sheet-title">${Views.esc(w.type)}</h2>
-      <div class="card-sub">${Views.fmtDateTime(w.date)} · ${Views.fmt(w.duration)} min${w.calories ? ' · ' + Views.fmt(w.calories) + ' kcal' : ''}</div>
-      <div style="height:14px"></div>
-      <button class="btn danger block" id="del-wk">Supprimer</button>
-    `);
-    $('#del-wk', sheet).addEventListener('click', () => {
-      DB.deleteWorkout(id);
-      closeModal();
-      renderView(currentView);
-      showToast('Supprimé');
+    openWorkoutSheet(w);
+  }
+
+  // ---- RECIPE (AI) ----
+  function openRecipeSheet() {
+    openModal(Views.recipeForm());
+    let selectedUser = DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser;
+    let selectedKind = '';
+    chipGroup('#recipe-user-chips', 'user', v => selectedUser = v);
+    chipGroup('#recipe-kind-chips', 'kind', v => selectedKind = v);
+
+    $('#recipe-generate', sheet).addEventListener('click', async () => {
+      const btn = $('#recipe-generate', sheet);
+      const fb = $('#recipe-feedback', sheet);
+      const result = $('#recipe-result', sheet);
+      const kcal = parseInt($('#recipe-kcal', sheet).value) || 500;
+      const hint = $('#recipe-hint', sheet).value.trim();
+      if (!selectedKind) { selectedKind = 'dinner'; }
+      if (!DB.state.settings.aiApiKey) {
+        fb.hidden = false; fb.className = 'ai-feedback err';
+        fb.textContent = 'Ajoute ta clé API Anthropic dans ⚙ Paramètres.';
+        return;
+      }
+      btn.disabled = true; btn.textContent = '🔄 Génération…';
+      fb.hidden = false; fb.className = 'ai-feedback info';
+      fb.textContent = 'Claude cuisine une recette pour toi…';
+      result.hidden = true; result.innerHTML = '';
+      try {
+        const user = DB.state.users[selectedUser];
+        const recipe = await AI.generateRecipe({ user, remainingKcal: kcal, mealKind: selectedKind, userHint: hint });
+        fb.hidden = true;
+        result.hidden = false;
+        result.innerHTML = Views.recipeResult(recipe);
+        result.dataset.userId = selectedUser;
+        result.dataset.kind = selectedKind;
+        const logBtn = $('#recipe-log-meal', sheet);
+        if (logBtn) logBtn.addEventListener('click', () => {
+          const title = logBtn.dataset.title;
+          const calories = parseInt(logBtn.dataset.kcal) || 0;
+          DB.addMeal({ userId: selectedUser, kind: selectedKind, title, calories, isCheat: false, cheatType: null });
+          closeModal();
+          showToast('Recette ajoutée comme repas');
+          renderView(currentView);
+        });
+      } catch (err) {
+        fb.className = 'ai-feedback err';
+        fb.textContent = 'Erreur : ' + (err.message || err);
+      } finally {
+        btn.disabled = false; btn.textContent = '🍳 Générer une recette';
+      }
     });
   }
 

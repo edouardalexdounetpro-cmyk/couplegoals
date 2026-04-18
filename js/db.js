@@ -221,6 +221,10 @@
     const e = { id: uid(), date: new Date().toISOString(), ...entry };
     state.weights.push(e); save(); return e;
   }
+  function updateWeight(id, patch) {
+    const w = state.weights.find(x => x.id === id); if (!w) return null;
+    Object.assign(w, patch); save(); return w;
+  }
   async function deleteWeight(id) {
     const i = state.weights.findIndex(x => x.id === id); if (i < 0) return;
     const w = state.weights[i]; state.weights.splice(i, 1); save();
@@ -240,6 +244,10 @@
   function addWorkout(w) {
     const e = { id: uid(), date: new Date().toISOString(), ...w };
     state.workouts.push(e); save(); return e;
+  }
+  function updateWorkout(id, patch) {
+    const w = state.workouts.find(x => x.id === id); if (!w) return null;
+    Object.assign(w, patch); save(); return w;
   }
   function deleteWorkout(id) {
     const i = state.workouts.findIndex(x => x.id === id); if (i < 0) return;
@@ -312,9 +320,9 @@
     CHEAT_LIMITS,
     savePhoto, getPhoto, photoUrl, deletePhoto,
     addMeal, updateMeal, deleteMeal,
-    addWeight, deleteWeight,
+    addWeight, updateWeight, deleteWeight,
     addPhoto, deleteProgressPhoto,
-    addWorkout, deleteWorkout,
+    addWorkout, updateWorkout, deleteWorkout,
     setUser, setSetting, updateUserProfile,
     mealsFor, caloriesToday, caloriesForDay,
     cheatUsage, cheatSummary,
