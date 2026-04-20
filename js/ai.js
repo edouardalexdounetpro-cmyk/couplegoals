@@ -89,6 +89,28 @@ Pas de markdown, pas de texte hors JSON.`;
     return call(body);
   }
 
+  // ---- HelloFresh recipe card scan ----
+  async function scanRecipeCard(blob) {
+    const b64 = await blobToBase64(blob);
+    const sys = `Tu es diététicien. L'utilisateur photographie une carte recette (type HelloFresh). Extrais les informations.
+Réponds UNIQUEMENT avec un objet JSON :
+{"title": string, "summary": string, "calories": <int total pour 1 personne>, "macros": {"protein_g": int, "carbs_g": int, "fat_g": int}, "ingredients": [{"name": string, "qty": string}], "steps": [string], "prep_min": int, "cook_min": int, "confidence": "low"|"medium"|"high"}
+Pas de markdown. Si tu ne peux pas lire une info, mets null ou [] mais garde le champ.`;
+    const body = {
+      model: MODEL,
+      max_tokens: 2000,
+      system: sys,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: b64 } },
+          { type: 'text', text: 'Extrais la recette depuis cette carte.' }
+        ]
+      }]
+    };
+    return call(body);
+  }
+
   // ---- Core API call ----
   async function call(body) {
     const key = DB.state.settings.aiApiKey;
@@ -120,5 +142,5 @@ Pas de markdown, pas de texte hors JSON.`;
     catch (e) { throw new Error('JSON IA invalide : ' + e.message); }
   }
 
-  global.AI = { estimateFromText, estimateFromPhoto, estimateWorkout, generateRecipe };
+  global.AI = { estimateFromText, estimateFromPhoto, estimateWorkout, generateRecipe, scanRecipeCard };
 })(window);

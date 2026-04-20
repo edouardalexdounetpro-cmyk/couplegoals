@@ -50,6 +50,8 @@
       if (e.target.closest('#add-meal-btn')) openMealSheet();
       if (e.target.closest('#add-workout-btn')) openWorkoutSheet();
       if (e.target.closest('#recipe-btn')) openRecipeSheet();
+      if (e.target.closest('#library-btn')) openLibrary();
+      if (e.target.closest('#hf-scan-btn')) openHFScan();
     });
   }
 
@@ -168,6 +170,8 @@
       });
       const exp = host.querySelector('#export-data');
       if (exp) exp.addEventListener('click', exportJSON);
+      const weekly = host.querySelector('#export-weekly');
+      if (weekly) weekly.addEventListener('click', exportWeeklyReport);
       const reset = host.querySelector('#reset-data');
       if (reset) reset.addEventListener('click', () => {
         if (confirm('Tout effacer définitivement ?')) {
@@ -515,6 +519,13 @@
           showToast('Recette ajoutée comme repas');
           renderView(currentView);
         });
+        const saveBtn = $('#recipe-save-library', sheet);
+        if (saveBtn) saveBtn.addEventListener('click', () => {
+          DB.addRecipe({ ...recipe, source: 'ai' });
+          saveBtn.textContent = '✓ Ajoutée à la bibliothèque';
+          saveBtn.disabled = true;
+          showToast('Recette sauvée');
+        });
       } catch (err) {
         fb.className = 'ai-feedback err';
         fb.textContent = 'Erreur : ' + (err.message || err);
@@ -522,6 +533,119 @@
         btn.disabled = false; btn.textContent = '🍳 Générer une recette';
       }
     });
+  }
+
+  // ---- RECIPE LIBRARY ----
+  function openLibrary() {
+    openModal(Views.libraryForm());
+    sheet.addEventListener('click', (e) => {
+      const r = e.target.closest('[data-recipe-id]');
+      if (r) openRecipeDetail(r.dataset.recipeId);
+    });
+  }
+
+  function openRecipeDetail(id) {
+    const r = (DB.state.recipes || []).find(x => x.id === id); if (!r) return;
+    openModal(Views.recipeDetail(r));
+    $('#lib-log-meal', sheet).addEventListener('click', () => {
+      const userId = DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser;
+      DB.addMeal({
+        userId,
+        kind: 'dinner',
+        title: r.title,
+        calories: r.calories || 0,
+        isCheat: false,
+        cheatType: null
+      });
+      closeModal();
+      showToast('Logué comme repas');
+      renderView(currentView);
+    });
+    $('#lib-delete', sheet).addEventListener('click', async () => {
+      if (!confirm('Supprimer cette recette de la bibliothèque ?')) return;
+      await DB.deleteRecipe(id);
+      closeModal();
+      openLibrary();
+      renderView(currentView);
+    });
+  }
+
+  // ---- HELLOFRESH SCAN ----
+  function openHFScan() {
+    openModal(Views.hfScanForm());
+    let photoBlob = null;
+    $('#hf-photo', sheet).addEventListener('change', (e) => {
+      photoBlob = e.target.files[0] || null;
+    });
+    $('#hf-scan', sheet).addEventListener('click', async () => {
+      const btn = $('#hf-scan', sheet);
+      const fb = $('#hf-feedback', sheet);
+      const res = $('#hf-result', sheet);
+      if (!photoBlob) {
+        fb.hidden = false; fb.className = 'ai-feedback err';
+        fb.textContent = 'Sélectionne ou prends une photo de la carte.';
+        return;
+      }
+      if (!DB.state.settings.aiApiKey) {
+        fb.hidden = false; fb.className = 'ai-feedback err';
+        fb.textContent = 'Ajoute ta clé API Anthropic dans ⚙ Paramètres.';
+        return;
+      }
+      btn.disabled = true; btn.textContent = '🔄 Analyse OCR…';
+      fb.hidden = false; fb.className = 'ai-feedback info';
+      fb.textContent = 'Claude lit ta carte recette…';
+      res.hidden = true; res.innerHTML = '';
+      try {
+        const recipe = await AI.scanRecipeCard(photoBlob);
+        const photoId = await DB.savePhoto(photoBlob);
+        const saved = DB.addRecipe({ ...recipe, source: 'hellofresh', photoId });
+        fb.className = 'ai-feedback ok';
+        fb.innerHTML = `<strong>✓ Extraite :</strong> ${Views.esc(saved.title || 'Recette')} · ${saved.calories || '?'} kcal<br>confiance ${recipe.confidence || 'medium'} · sauvée dans la bibliothèque`;
+        res.hidden = false;
+        res.innerHTML = Views.recipeResult(saved);
+        const log = $('#recipe-log-meal', sheet);
+        if (log) log.addEventListener('click', () => {
+          const userId = DB.state.currentUser === 'couple' ? 'edouard' : DB.state.currentUser;
+          DB.addMeal({
+            userId, kind: 'dinner',
+            title: saved.title,
+            calories: saved.calories || 0,
+            isCheat: false, cheatType: null
+          });
+          closeModal();
+          showToast('Logué comme repas');
+          renderView(currentView);
+        });
+        const save2 = $('#recipe-save-library', sheet);
+        if (save2) { save2.textContent = '✓ Déjà dans la bibliothèque'; save2.disabled = true; }
+      } catch (err) {
+        fb.className = 'ai-feedback err';
+        fb.textContent = 'Erreur : ' + (err.message || err);
+      } finally {
+        btn.disabled = false; btn.textContent = '🤖 Analyser la carte';
+      }
+    });
+  }
+
+  // ---- WEEKLY REPORT ----
+  function exportWeeklyReport() {
+    const html = Views.weeklyReport(DB.startOfWeek());
+    const win = window.open('', '_blank');
+    if (!win) {
+      // Fallback: download
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `couplegoals-semaine-${new Date().toISOString().slice(0,10)}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Rapport téléchargé');
+      return;
+    }
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
   }
 
   // ---- helpers ----

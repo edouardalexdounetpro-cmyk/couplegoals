@@ -144,9 +144,161 @@
         <button class="btn primary" id="add-meal-btn">+ Ajouter un repas</button>
         <button class="btn ai" id="recipe-btn">🍳 Recette IA</button>
       </div>
+      <div style="height:8px"></div>
+      <div class="row">
+        <button class="btn" id="library-btn">📚 Ma bibliothèque (${DB.listRecipes().length})</button>
+        <button class="btn" id="hf-scan-btn">📷 Scanner carte HF</button>
+      </div>
       <div style="height:12px"></div>
       ${list.length ? `<div class="entry-list">${list.map(renderMealEntry).join('')}</div>` : `<div class="empty">Aucun repas. Commence par ajouter ton premier.</div>`}
     `;
+  }
+
+  function libraryForm() {
+    const recipes = DB.listRecipes();
+    return `
+      <button class="sheet-close" data-close>×</button>
+      <h2 class="sheet-title">📚 Bibliothèque de recettes</h2>
+      ${recipes.length ? `<div class="entry-list">
+        ${recipes.map(r => `<div class="entry" data-recipe-id="${r.id}">
+          <div class="entry-thumb">${r.source === 'hellofresh' ? '🥘' : r.source === 'ai' ? '🤖' : '🍳'}</div>
+          <div class="entry-main">
+            <div class="entry-title">${esc(r.title || 'Recette')}</div>
+            <div class="entry-sub">${r.calories || '?'} kcal · ${(r.prep_min || 0) + (r.cook_min || 0)} min</div>
+          </div>
+          <div class="entry-right"><span class="tag">voir</span></div>
+        </div>`).join('')}
+      </div>` : `<div class="empty">Aucune recette enregistrée. Génère via l'IA ou scanne une carte HelloFresh.</div>`}
+    `;
+  }
+
+  function recipeDetail(r) {
+    return `
+      <button class="sheet-close" data-close>×</button>
+      <h2 class="sheet-title">${esc(r.title || 'Recette')}</h2>
+      <div class="card-sub" style="margin-bottom:14px">${r.calories || '?'} kcal · ${r.prep_min || 0} min prépa · ${r.cook_min || 0} min cuisson${r.source === 'hellofresh' ? ' · 🥘 HelloFresh' : r.source === 'ai' ? ' · 🤖 IA' : ''}</div>
+      ${r.summary ? `<div class="card" style="margin-top:0">${esc(r.summary)}</div>` : ''}
+      ${r.macros ? `<div class="card-sub" style="margin:10px 0">Prot. ${r.macros.protein_g || 0}g · Gluc. ${r.macros.carbs_g || 0}g · Lip. ${r.macros.fat_g || 0}g</div>` : ''}
+      ${r.ingredients?.length ? `<div class="card">
+        <div class="card-title">Ingrédients</div>
+        <ul style="margin:10px 0 0;padding-left:20px;font-size:14px;line-height:1.6">
+          ${r.ingredients.map(i => `<li>${esc(i.name)}${i.qty ? ' — ' + esc(i.qty) : ''}</li>`).join('')}
+        </ul>
+      </div>` : ''}
+      ${r.steps?.length ? `<div class="card">
+        <div class="card-title">Étapes</div>
+        <ol style="margin:10px 0 0;padding-left:20px;font-size:14px;line-height:1.6">
+          ${r.steps.map(s => `<li style="margin-bottom:6px">${esc(s)}</li>`).join('')}
+        </ol>
+      </div>` : ''}
+      <button class="btn primary block" id="lib-log-meal" data-kcal="${r.calories || 0}" data-title="${esc(r.title || 'Recette')}">+ Logger comme repas</button>
+      <div style="height:8px"></div>
+      <button class="btn danger block" id="lib-delete" data-id="${r.id}">Supprimer de la bibliothèque</button>
+    `;
+  }
+
+  function hfScanForm() {
+    return `
+      <button class="sheet-close" data-close>×</button>
+      <h2 class="sheet-title">📷 Scanner une carte HelloFresh</h2>
+      <div class="card-sub" style="margin-bottom:14px">Photographie la carte recette (avec les macros visibles) et Claude va l'extraire dans ta bibliothèque.</div>
+      <div class="field">
+        <label>Photo de la carte</label>
+        <input type="file" id="hf-photo" accept="image/*" capture="environment" />
+      </div>
+      <button type="button" class="btn ai block" id="hf-scan">🤖 Analyser la carte</button>
+      <div id="hf-feedback" class="ai-feedback" hidden></div>
+      <div id="hf-result" hidden></div>
+    `;
+  }
+
+  function weeklyReport(weekStart) {
+    const start = new Date(weekStart); start.setHours(0,0,0,0);
+    const end = new Date(start); end.setDate(end.getDate() + 7);
+    const fmtFull = (d) => d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+    const userIds = ['edouard', 'elsa'];
+    const days = Array.from({length: 7}, (_, i) => {
+      const d = new Date(start); d.setDate(start.getDate() + i); return d;
+    });
+
+    let body = '';
+    for (const uid of userIds) {
+      const u = DB.state.users[uid];
+      const target = DB.dailyTarget(u);
+      const daily = days.map(d => DB.caloriesForDay(uid, d));
+      const avg = Math.round(daily.reduce((s, x) => s + x, 0) / 7);
+      const weights = DB.state.weights.filter(w => w.userId === uid && new Date(w.date) >= start && new Date(w.date) < end);
+      const workouts = DB.state.workouts.filter(w => w.userId === uid && new Date(w.date) >= start && new Date(w.date) < end);
+      const workoutMin = workouts.reduce((s, w) => s + (w.duration || 0), 0);
+      const cheats = DB.state.meals.filter(m => m.userId === uid && m.isCheat && new Date(m.date) >= start && new Date(m.date) < end);
+      const hit = daily.filter((k, i) => k > 0 && k <= target * 1.05).length;
+      const over = daily.filter(k => k > target * 1.15).length;
+
+      body += `<section class="user-section ${uid}">
+        <h2>${u.name}</h2>
+        <div class="grid">
+          <div class="stat"><div class="label">Moyenne cal / jour</div><div class="val">${avg}</div><div class="hint">cible ${target}</div></div>
+          <div class="stat"><div class="label">Jours objectif</div><div class="val">${hit}/7</div><div class="hint">${over} jours dépassés</div></div>
+          <div class="stat"><div class="label">Sport</div><div class="val">${workoutMin} min</div><div class="hint">${workouts.length} séance(s)</div></div>
+          <div class="stat"><div class="label">Écarts</div><div class="val">${cheats.length}</div><div class="hint">sur la semaine</div></div>
+        </div>
+        ${weights.length ? `<h3>Pesées</h3><ul>${weights.sort((a,b) => new Date(a.date) - new Date(b.date)).map(w => `<li>${fmtFull(new Date(w.date))} : ${fmt(w.weight, 1)} kg</li>`).join('')}</ul>` : ''}
+        ${workouts.length ? `<h3>Séances</h3><ul>${workouts.map(w => `<li>${fmtFull(new Date(w.date))} · ${esc(w.type)} · ${w.duration} min${w.calories ? ' · ' + w.calories + ' kcal' : ''}</li>`).join('')}</ul>` : ''}
+        ${cheats.length ? `<h3>Écarts</h3><ul>${cheats.map(c => `<li>${fmtFull(new Date(c.date))} · ${esc(c.title)}${c.cheatType ? ' (' + (DB.CHEAT_LIMITS[c.cheatType]?.label || c.cheatType) + ')' : ''}</li>`).join('')}</ul>` : ''}
+        <h3>Calories par jour</h3>
+        <div class="daybars">
+          ${days.map((d, i) => {
+            const k = daily[i];
+            const pct = Math.min(100, (k / target) * 100);
+            const cls = k === 0 ? 'none' : k <= target * 1.05 ? 'ok' : k <= target * 1.15 ? 'warn' : 'bad';
+            return `<div class="daybar"><div class="bar ${cls}" style="height:${pct}%"></div><div class="daybar-label">${['L','M','M','J','V','S','D'][i]}<br>${k || '—'}</div></div>`;
+          }).join('')}
+        </div>
+      </section>`;
+    }
+
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>CoupleGoals — Semaine du ${fmtFull(start)} au ${fmtFull(new Date(end.getTime() - 86400000))}</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 30px 20px; color: #111; background: #fafafa; }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  h2 { font-size: 22px; margin: 0 0 14px; }
+  h3 { font-size: 15px; margin: 18px 0 8px; text-transform: uppercase; letter-spacing: .05em; color: #666; }
+  ul { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.7; }
+  .header-sub { color: #666; font-size: 14px; margin-bottom: 30px; }
+  .user-section { background: white; padding: 24px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); border-left: 4px solid; }
+  .user-section.edouard { border-left-color: #3b82f6; }
+  .user-section.elsa { border-left-color: #ec4899; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .stat { background: #f5f5f7; padding: 12px; border-radius: 10px; }
+  .stat .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: .05em; }
+  .stat .val { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .stat .hint { font-size: 11px; color: #999; margin-top: 2px; }
+  .daybars { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: end; height: 140px; margin: 10px 0; }
+  .daybar { display: flex; flex-direction: column; align-items: center; height: 100%; }
+  .bar { width: 100%; max-width: 28px; min-height: 4px; border-radius: 4px 4px 2px 2px; margin-top: auto; }
+  .bar.ok { background: #10b981; }
+  .bar.warn { background: #f59e0b; }
+  .bar.bad { background: #ef4444; }
+  .bar.none { background: #e5e5e5; }
+  .daybar-label { font-size: 10px; text-align: center; margin-top: 6px; color: #666; }
+  .actions { text-align: center; margin: 30px 0; }
+  button { background: #3b82f6; color: white; padding: 12px 22px; border: 0; border-radius: 10px; font-size: 15px; cursor: pointer; }
+  @media print { body { background: white; padding: 20px; } .actions { display: none; } .user-section { box-shadow: none; border: 1px solid #ddd; } }
+</style>
+</head>
+<body>
+  <h1>CoupleGoals</h1>
+  <div class="header-sub">Semaine du ${fmtFull(start)} au ${fmtFull(new Date(end.getTime() - 86400000))}</div>
+  ${body}
+  <div class="actions">
+    <button onclick="window.print()">Imprimer / Enregistrer en PDF</button>
+  </div>
+</body>
+</html>`;
   }
 
   function renderWeight(userId) {
@@ -458,9 +610,11 @@
         <div style="height:8px"></div>
         <button class="btn small" id="notif-perm">Autoriser les notifications</button>
       </div>
-      <div class="section-title">Données</div>
+      <div class="section-title">Rapports & Données</div>
       <div class="card">
-        <button class="btn small block" id="export-data">Exporter (JSON)</button>
+        <button class="btn primary block" id="export-weekly">📄 Rapport hebdo (PDF)</button>
+        <div style="height:8px"></div>
+        <button class="btn small block" id="export-data">Exporter données (JSON)</button>
         <div style="height:8px"></div>
         <button class="btn danger small block" id="reset-data">Réinitialiser toutes les données</button>
       </div>
@@ -673,6 +827,8 @@
         </ol>
       </div>
       <button class="btn primary block" id="recipe-log-meal" data-kcal="${recipe.calories || 0}" data-title="${esc(recipe.title || 'Recette')}">+ Ajouter comme repas consommé</button>
+      <div style="height:8px"></div>
+      <button class="btn block" id="recipe-save-library">💾 Sauver dans ma bibliothèque</button>
     `;
   }
 

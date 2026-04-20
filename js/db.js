@@ -30,7 +30,8 @@
     weights: [],   // { id, userId, date, weight, photoId }
     photos: [],    // { id, userId, date, photoId, note } (progress photos)
     workouts: [],  // { id, userId, date, type, duration, calories, notes }
-    plannedCheats: [] // { id, userId, date(YYYY-MM-DD), cheatType, note }
+    plannedCheats: [], // { id, userId, date(YYYY-MM-DD), cheatType, note }
+    recipes: []    // { id, title, summary, calories, macros, ingredients, steps, prep_min, cook_min, source, photoId, createdAt }
   };
 
   const CHEAT_LIMITS = {
@@ -54,7 +55,8 @@
         ...parsed,
         users: { ...DEFAULT_STATE.users, ...(parsed.users || {}) },
         settings: { ...DEFAULT_STATE.settings, ...(parsed.settings || {}) },
-        plannedCheats: parsed.plannedCheats || []
+        plannedCheats: parsed.plannedCheats || [],
+        recipes: parsed.recipes || []
       };
     } catch (e) {
       console.warn('state load failed', e);
@@ -269,6 +271,23 @@
     const i = state.plannedCheats.findIndex(x => x.id === id); if (i < 0) return;
     state.plannedCheats.splice(i, 1); save();
   }
+  // --- Recipe library ---
+  function addRecipe(r) {
+    const e = { id: uid(), createdAt: new Date().toISOString(), ...r };
+    if (!state.recipes) state.recipes = [];
+    state.recipes.push(e); save(); return e;
+  }
+  async function deleteRecipe(id) {
+    if (!state.recipes) return;
+    const i = state.recipes.findIndex(x => x.id === id); if (i < 0) return;
+    const r = state.recipes[i];
+    state.recipes.splice(i, 1); save();
+    if (r.photoId) await deletePhoto(r.photoId);
+  }
+  function listRecipes() {
+    return (state.recipes || []).slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }
+
   function plannedCheatsForDay(day, userId) {
     const k = ymd(day);
     return (state.plannedCheats || []).filter(p => p.date === k && (!userId || userId === 'couple' || p.userId === userId));
@@ -331,6 +350,7 @@
     startOfDay, startOfMonth, startOfWeek, sameDay, daysBetween,
     ymd, addPlannedCheat, deletePlannedCheat,
     plannedCheatsForDay, plannedCheatsInMonth,
-    dayStatus, dayMeals, dayWorkouts
+    dayStatus, dayMeals, dayWorkouts,
+    addRecipe, deleteRecipe, listRecipes
   };
 })(window);
