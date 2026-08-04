@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elsa Quintin — Infirmière libérale à Toulouse (Les Chalets)</title>
+  <meta name="description" content="Cabinet d'infirmières libérales aux Chalets, Toulouse — 3 rue René Leduc. Elsa Quintin, 10 ans d'expérience, DU en dialyse, spécialiste des soins complexes. Soins à domicile et au cabinet." />
+  <meta name="theme-color" content="#0d9488" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Elsa Quintin — Infirmière libérale à Toulouse" />
+  <meta property="og:description" content="Soins infirmiers à domicile et au cabinet, quartier des Chalets. Prendre le temps avec chaque patient." />
+  <meta property="og:locale" content="fr_FR" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230d9488'/><path d='M50 24v52M24 50h52' stroke='white' stroke-width='12' stroke-linecap='round'/></svg>" />
+</head>
+<body>
+
+  <!-- ===== Barre de navigation ===== -->
+  <header class="nav" id="top">
+    <div class="container nav__inner">
+      <a href="#top" class="brand">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 100 100" width="34" height="34"><rect width="100" height="100" rx="24" fill="currentColor"/><path d="M50 26v48M26 50h48" stroke="#fff" stroke-width="11" stroke-linecap="round"/></svg>
+        </span>
+        <span class="brand__text">
+          <strong>Elsa Quintin</strong>
+          <small>Infirmière libérale · Toulouse</small>
+        </span>
+      </a>
+      <nav class="nav__links" aria-label="Navigation principale">
+        <a href="#soins">Les soins</a>
+        <a href="#apropos">Le cabinet</a>
+        <a href="#zone">Zone d'intervention</a>
+        <a href="#contact" class="btn btn--sm">Prendre contact</a>
+      </nav>
+      <button class="nav__toggle" aria-label="Ouvrir le menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero">
+    <div class="hero__glow" aria-hidden="true"></div>
+    <div class="container hero__inner">
+      <div class="hero__text">
+        <p class="eyebrow">Cabinet infirmier · Quartier des Chalets</p>
+        <h1>Des soins infirmiers <em>attentifs</em>, à domicile et au cabinet.</h1>
+        <p class="lead">
+          Elsa Quintin vous accompagne avec plus de 10 ans d'expérience et une
+          approche humaine du soin : prendre le temps, écouter, et suivre chaque
+          patient dans la durée — y compris pour les soins les plus complexes.
+        </p>
+        <div class="hero__cta">
+          <a href="#contact" class="btn btn--lg">Demander un soin</a>
+          <a href="#soins" class="btn btn--ghost btn--lg">Découvrir les soins</a>
+        </div>
+        <ul class="hero__badges">
+          <li><span>10+</span> ans d'expérience</li>
+          <li><span>DU</span> en dialyse</li>
+          <li><span>Paris · Toulouse</span> parcours hospitalier</li>
+        </ul>
+      </div>
+
+      <aside class="hero__card" aria-label="Informations pratiques">
+        <div class="card__row">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
+          <div>
+            <strong>3 rue René Leduc</strong>
+            <span>31500 Toulouse — Les Chalets</span>
+          </div>
+        </div>
+        <div class="card__row">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .58 3.6 1 1 0 0 1-.24 1Z"/></svg>
+          <div>
+            <strong>Sur rendez-vous</strong>
+            <span>Soins à domicile 7j/7</span>
+          </div>
+        </div>
+        <div class="card__row">
+          <svg viewBox="0 0 24 24" class="ic"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 10.4 3.3 2-.8 1.3L11 13V6h2Z"/></svg>
+          <div>
+            <strong>Un suivi qui prend le temps</strong>
+            <span>Écoute et coordination des soins</span>
+          </div>
+        </div>
+        <a href="#contact" class="btn btn--block">Nous contacter</a>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ===== Les soins ===== -->
+  <section class="section" id="soins">
+    <div class="container">
+      <header class="section__head">
+        <p class="eyebrow">Nos prestations</p>
+        <h2>Des soins complets, coordonnés avec vos médecins</h2>
+        <p class="section__sub">Sur prescription médicale, à votre domicile ou au cabinet. Elsa est spécialisée dans les prises en charge complexes.</p>
+      </header>
+
+      <div class="grid grid--soins">
+        <article class="soin">
+          <div class="soin__ic">💉</div>
+          <h3>Soins techniques</h3>
+          <p>Injections, perfusions, prises de sang, pansements simples et complexes, ablation de fils et d'agrafes.</p>
+        </article>
+        <article class="soin soin--star">
+          <div class="soin__ic">🩺</div>
+          <h3>Soins complexes</h3>
+          <p>Plaies chroniques, stomies, chambres implantables, soins post-opératoires et suivi de pathologies lourdes.</p>
+          <span class="soin__tag">Spécialité d'Elsa</span>
+        </article>
+        <article class="soin">
+          <div class="soin__ic">🫧</div>
+          <h3>Dialyse & néphrologie</h3>
+          <p>Prise en charge de la dialyse péritonéale et suivi des patients insuffisants rénaux — DU en dialyse.</p>
+        </article>
+        <article class="soin">
+          <div class="soin__ic">💊</div>
+          <h3>Suivi & chronicité</h3>
+          <p>Préparation et administration des traitements, suivi du diabète (glycémie, insuline), surveillance clinique.</p>
+        </article>
+        <article class="soin">
+          <div class="soin__ic">🤝</div>
+          <h3>Aide & accompagnement</h3>
+          <p>Toilettes, aide au maintien à domicile des personnes âgées ou dépendantes, coordination avec les aidants.</p>
+        </article>
+        <article class="soin">
+          <div class="soin__ic">📋</div>
+          <h3>Bilans & prévention</h3>
+          <p>Bilans de soins infirmiers (BSI), vaccination, éducation thérapeutique et conseils personnalisés.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== À propos ===== -->
+  <section class="section section--alt" id="apropos">
+    <div class="container apropos">
+      <div class="apropos__intro">
+        <p class="eyebrow">Le cabinet</p>
+        <h2>Deux infirmières, une même exigence : le soin bien fait</h2>
+        <p>
+          Le cabinet réunit deux infirmières libérales associées, au cœur du quartier
+          des Chalets. Ensemble, elles assurent une présence de proximité et une
+          continuité des soins, dans le respect et l'écoute de chacun.
+        </p>
+      </div>
+
+      <div class="grid grid--team">
+        <article class="person">
+          <div class="person__avatar" aria-hidden="true">EQ</div>
+          <h3>Elsa Quintin</h3>
+          <p class="person__role">Infirmière libérale — Diplômée d'État</p>
+          <ul class="person__points">
+            <li>Plus de <strong>10 ans d'expérience</strong> auprès des patients</li>
+            <li>Parcours hospitalier à <strong>Paris</strong> puis à Toulouse</li>
+            <li><strong>DU en dialyse</strong> — soins néphrologiques</li>
+            <li>Spécialiste des <strong>soins complexes</strong></li>
+            <li>Une conviction : <strong>prendre le temps</strong> avec chaque patient</li>
+          </ul>
+        </article>
+
+        <article class="person">
+          <div class="person__avatar person__avatar--alt" aria-hidden="true">CP</div>
+          <h3>Carole Pujol</h3>
+          <p class="person__role">Infirmière libérale — Associée</p>
+          <ul class="person__points">
+            <li>Associée du cabinet aux Chalets</li>
+            <li>Soins à domicile et au cabinet</li>
+            <li>Continuité et coordination des prises en charge</li>
+            <li>Une même attention portée à chaque patient</li>
+          </ul>
+        </article>
+      </div>
+
+      <blockquote class="quote">
+        <p>« Bien soigner, c'est d'abord bien écouter. Nous prenons le temps qu'il faut,
+           pour que chaque patient se sente en confiance, chez lui comme au cabinet. »</p>
+        <cite>— Elsa Quintin</cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- ===== Zone d'intervention ===== -->
+  <section class="section" id="zone">
+    <div class="container">
+      <header class="section__head">
+        <p class="eyebrow">À domicile</p>
+        <h2>Notre zone d'intervention</h2>
+        <p class="section__sub">Nous intervenons à domicile autour du cabinet — du quartier des Chalets jusqu'aux abords de Jean Jaurès. Un doute sur votre adresse ? Écrivez-nous, nous vous répondrons.</p>
+      </header>
+
+      <div class="zone">
+        <div id="map" class="zone__map" role="img" aria-label="Carte de la zone d'intervention du cabinet, centrée sur le 3 rue René Leduc à Toulouse"></div>
+        <div class="zone__info">
+          <h3>Le cabinet</h3>
+          <p class="zone__addr">3 rue René Leduc<br />31500 Toulouse — Les Chalets</p>
+          <ul class="zone__list">
+            <li>Les Chalets</li>
+            <li>Concorde / Jeanne d'Arc</li>
+            <li>Boulevard de Strasbourg</li>
+            <li>Jusqu'aux abords de Jean Jaurès</li>
+          </ul>
+          <a class="btn btn--ghost btn--block" target="_blank" rel="noopener"
+             href="https://www.google.com/maps/search/?api=1&query=3+rue+Ren%C3%A9+Leduc+31500+Toulouse">
+            Ouvrir l'itinéraire
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Contact ===== -->
+  <section class="section section--contact" id="contact">
+    <div class="container contact">
+      <div class="contact__intro">
+        <p class="eyebrow">Prise de contact</p>
+        <h2>Demander un soin ou poser une question</h2>
+        <p>Décrivez la nature des soins dont vous avez besoin. Votre message est
+           envoyé directement au cabinet, qui vous recontacte au plus vite.</p>
+
+        <ul class="contact__direct">
+          <li>
+            <svg viewBox="0 0 24 24" class="ic"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
+            <span>3 rue René Leduc, 31500 Toulouse</span>
+          </li>
+          <li>
+            <svg viewBox="0 0 24 24" class="ic"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5Z"/></svg>
+            <!-- ⚙️ Remplacez par l'adresse Gmail du cabinet -->
+            <a href="mailto:contact@cabinet-elsa-quintin.fr" data-cabinet-email>contact@cabinet-elsa-quintin.fr</a>
+          </li>
+        </ul>
+
+        <p class="contact__note">Vos données ne servent qu'à traiter votre demande de soins et ne sont jamais transmises à des tiers.</p>
+      </div>
+
+      <form class="form" id="contact-form" novalidate>
+        <!-- ⚙️ CONFIGURATION : voir js/main.js (constante WEB3FORMS_KEY) -->
+        <div class="form__row">
+          <label>Prénom
+            <input type="text" name="prenom" autocomplete="given-name" required />
+          </label>
+          <label>Nom
+            <input type="text" name="nom" autocomplete="family-name" required />
+          </label>
+        </div>
+
+        <label>Adresse (lieu du soin)
+          <input type="text" name="adresse" autocomplete="street-address" placeholder="N°, rue, code postal, ville" required />
+        </label>
+
+        <div class="form__row">
+          <label>E-mail
+            <input type="email" name="email" autocomplete="email" required />
+          </label>
+          <label>Téléphone
+            <input type="tel" name="telephone" autocomplete="tel" inputmode="tel" required />
+          </label>
+        </div>
+
+        <label>Votre message — nature des soins
+          <textarea name="message" rows="5" placeholder="Décrivez le soin dont vous avez besoin, la fréquence, et toute information utile (ordonnance, disponibilités…)." required></textarea>
+        </label>
+
+        <label class="form__consent">
+          <input type="checkbox" name="consentement" required />
+          <span>J'accepte que ces informations soient transmises au cabinet pour être recontacté(e).</span>
+        </label>
+
+        <!-- Anti-spam (honeypot) : ne pas remplir -->
+        <input type="checkbox" name="botcheck" tabindex="-1" style="display:none" aria-hidden="true" />
+
+        <button type="submit" class="btn btn--lg btn--block" id="submit-btn">Envoyer ma demande</button>
+
+        <p class="form__status" id="form-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div>
+        <strong>Cabinet infirmier Elsa Quintin &amp; Carole Pujol</strong>
+        <p>3 rue René Leduc, 31500 Toulouse — Les Chalets</p>
+      </div>
+      <nav class="footer__links" aria-label="Pied de page">
+        <a href="#soins">Les soins</a>
+        <a href="#apropos">Le cabinet</a>
+        <a href="#zone">Zone d'intervention</a>
+        <a href="#contact">Contact</a>
+      </nav>
+      <p class="footer__legal">Infirmières libérales Diplômées d'État · Soins sur prescription médicale.</p>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
