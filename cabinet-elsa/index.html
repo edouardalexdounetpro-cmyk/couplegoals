@@ -4,42 +4,202 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Elsa Quintin — Infirmière libérale à Toulouse (Les Chalets)</title>
-  <meta name="description" content="Cabinet d'infirmières libérales aux Chalets, Toulouse — 3 rue René Leduc. Elsa Quintin, 10 ans d'expérience, DU en dialyse, spécialiste des soins complexes. Soins à domicile et au cabinet." />
+  <meta name="description" content="Cabinet d'infirmières libérales diplômées d'État, quartier des Chalets à Toulouse — 3 rue René Leduc. Soins à domicile et au cabinet. Elsa Quintin et Carole Pujol." />
   <meta name="theme-color" content="#0d9488" />
-
   <meta property="og:type" content="website" />
   <meta property="og:title" content="Elsa Quintin — Infirmière libérale à Toulouse" />
-  <meta property="og:description" content="Soins infirmiers à domicile et au cabinet, quartier des Chalets. Prendre le temps avec chaque patient." />
+  <meta property="og:description" content="Cabinet infirmier aux Chalets, Toulouse. Soins à domicile et au cabinet, sur prescription médicale." />
   <meta property="og:locale" content="fr_FR" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-
-  <link rel="stylesheet" href="css/styles.css" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%230d9488'/><path d='M50 24v52M24 50h52' stroke='white' stroke-width='12' stroke-linecap='round'/></svg>" />
+
+  <style>
+  :root{
+    --teal-900:#134e4a; --teal-800:#115e59; --teal-700:#0f766e; --teal-600:#0d9488;
+    --teal-500:#14b8a6; --teal-200:#99f6e4; --teal-100:#ccfbf1; --teal-50:#f0fdfa;
+    --sand-50:#fbf8f3; --sand-100:#f4eee4; --ink:#1f2a2a; --ink-soft:#4b5a59;
+    --line:#e6e0d5; --white:#fff;
+    --shadow-sm:0 1px 2px rgba(19,78,74,.06),0 4px 14px rgba(19,78,74,.06);
+    --shadow-md:0 10px 40px rgba(19,78,74,.12);
+    --radius:18px; --radius-lg:26px; --maxw:1140px;
+    --serif:"Fraunces",Georgia,"Times New Roman",serif;
+    --sans:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:var(--sans);color:var(--ink);background:var(--sand-50);line-height:1.6;-webkit-font-smoothing:antialiased}
+  img,svg{max-width:100%}
+  .container{width:100%;max-width:var(--maxw);margin-inline:auto;padding-inline:22px}
+  h1,h2,h3{font-family:var(--serif);font-weight:500;line-height:1.12;letter-spacing:-.01em;margin:0}
+  h1{font-size:clamp(2.1rem,5vw,3.4rem)}
+  h2{font-size:clamp(1.6rem,3.4vw,2.4rem)}
+  h3{font-size:1.22rem}
+  p{margin:0}
+  a{color:var(--teal-700);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.74rem;font-weight:700;color:var(--teal-600);margin-bottom:.6rem}
+
+  .btn{--bg:var(--teal-600);display:inline-flex;align-items:center;justify-content:center;gap:.5rem;background:var(--bg);color:#fff;border:1px solid transparent;border-radius:999px;padding:.72rem 1.25rem;font-family:var(--sans);font-weight:600;font-size:.95rem;cursor:pointer;transition:transform .15s,box-shadow .15s,background .15s;box-shadow:0 6px 18px rgba(13,148,136,.28);text-decoration:none}
+  .btn:hover{transform:translateY(-1px);background:var(--teal-700);text-decoration:none;box-shadow:0 10px 24px rgba(13,148,136,.34)}
+  .btn:active{transform:translateY(0)}
+  .btn--lg{padding:.95rem 1.6rem;font-size:1rem}
+  .btn--sm{padding:.55rem 1rem;font-size:.88rem}
+  .btn--block{width:100%}
+  .btn--ghost{background:transparent;color:var(--teal-700);border-color:var(--teal-100);box-shadow:none}
+  .btn--ghost:hover{background:var(--teal-50);color:var(--teal-800);box-shadow:none}
+
+  .nav{position:sticky;top:0;z-index:900;background:rgba(251,248,243,.82);backdrop-filter:saturate(140%) blur(12px);border-bottom:1px solid var(--line)}
+  .nav__inner{display:flex;align-items:center;justify-content:space-between;min-height:68px;gap:1rem}
+  .brand{display:inline-flex;align-items:center;gap:.65rem;color:var(--teal-600)}
+  .brand:hover{text-decoration:none}
+  .brand__text{display:flex;flex-direction:column;line-height:1.1}
+  .brand__text strong{font-family:var(--serif);font-size:1.12rem;color:var(--ink)}
+  .brand__text small{font-size:.72rem;color:var(--ink-soft)}
+  .nav__links{display:flex;align-items:center;gap:1.5rem}
+  .nav__links a{color:var(--ink-soft);font-weight:500;font-size:.94rem}
+  .nav__links a:hover{color:var(--teal-700);text-decoration:none}
+  .nav__links a.btn{color:#fff}
+  .nav__toggle{display:none;background:none;border:0;cursor:pointer;padding:8px}
+  .nav__toggle span{display:block;width:24px;height:2px;background:var(--ink);margin:5px 0;border-radius:2px}
+
+  .hero{position:relative;overflow:hidden;padding:clamp(2.5rem,6vw,5rem) 0 clamp(3rem,7vw,5.5rem)}
+  .hero__glow{position:absolute;inset:-30% -10% auto auto;width:60vw;height:60vw;max-width:720px;max-height:720px;background:radial-gradient(circle at 60% 40%,rgba(20,184,166,.28),rgba(20,184,166,0) 62%);z-index:0}
+  .hero__inner{position:relative;z-index:1;display:grid;grid-template-columns:1.35fr .9fr;gap:clamp(1.5rem,4vw,3.5rem);align-items:center}
+  .hero h1{margin:.2rem 0 1.1rem}
+  .hero h1 em{font-style:italic;color:var(--teal-600)}
+  .lead{font-size:1.12rem;color:var(--ink-soft);max-width:34rem}
+  .hero__cta{display:flex;flex-wrap:wrap;gap:.8rem;margin:1.7rem 0 1.6rem}
+  .hero__badges{display:flex;flex-wrap:wrap;gap:1.3rem 2rem;list-style:none;padding:0;margin:0}
+  .hero__badges li{font-size:.9rem;color:var(--ink-soft)}
+  .hero__badges span{display:block;font-family:var(--serif);font-size:1.22rem;color:var(--teal-700);font-weight:600}
+  .hero__card{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);padding:1.5rem;box-shadow:var(--shadow-md);display:grid;gap:1rem}
+  .card__row{display:flex;gap:.85rem;align-items:flex-start}
+  .card__row .ic{flex:none;width:30px;height:30px;fill:var(--teal-600);background:var(--teal-50);border-radius:10px;padding:5px}
+  .card__row strong{display:block;font-size:.98rem}
+  .card__row span{font-size:.86rem;color:var(--ink-soft)}
+  .hero__card .btn{margin-top:.3rem}
+
+  .section{padding:clamp(3rem,7vw,5.5rem) 0}
+  .section--alt{background:linear-gradient(180deg,var(--sand-100),var(--sand-50))}
+  .section__head{max-width:44rem;margin:0 auto 2.6rem;text-align:center}
+  .section__sub{color:var(--ink-soft);margin-top:.8rem;font-size:1.05rem}
+  .grid{display:grid;gap:1.1rem}
+  .grid--soins{grid-template-columns:repeat(3,1fr)}
+  .soin{position:relative;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:1.6rem 1.5rem;box-shadow:var(--shadow-sm);transition:transform .18s,box-shadow .18s,border-color .18s}
+  .soin:hover{transform:translateY(-3px);box-shadow:var(--shadow-md);border-color:var(--teal-100)}
+  .soin__ic{font-size:1.6rem;width:52px;height:52px;display:grid;place-items:center;background:var(--teal-50);border-radius:14px;margin-bottom:.9rem}
+  .soin h3{margin-bottom:.4rem}
+  .soin p{color:var(--ink-soft);font-size:.96rem}
+  .soin--star{border-color:var(--teal-200);background:linear-gradient(180deg,#fff,var(--teal-50))}
+
+  .apropos__intro{max-width:44rem;margin:0 auto 2.4rem;text-align:center}
+  .apropos__intro p{color:var(--ink-soft);margin-top:.8rem;font-size:1.05rem}
+  .grid--team{grid-template-columns:repeat(2,1fr)}
+  .person{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:1.9rem;box-shadow:var(--shadow-sm)}
+  .person__avatar{width:66px;height:66px;border-radius:50%;display:grid;place-items:center;font-family:var(--serif);font-size:1.4rem;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--teal-600),var(--teal-500));margin-bottom:1rem}
+  .person__avatar--alt{background:linear-gradient(135deg,#0891b2,#22d3ee)}
+  .person__role{color:var(--teal-700);font-weight:600;font-size:.92rem;margin:.2rem 0 1rem}
+  .person__points{list-style:none;padding:0;margin:0;display:grid;gap:.55rem}
+  .person__points li{position:relative;padding-left:1.5rem;color:var(--ink-soft);font-size:.96rem}
+  .person__points li::before{content:"";position:absolute;left:0;top:.55em;width:8px;height:8px;border-radius:50%;background:var(--teal-500)}
+  .person__points strong{color:var(--ink)}
+  .approche{max-width:46rem;margin:2.6rem auto 0;text-align:center;font-family:var(--serif);font-size:clamp(1.15rem,2.4vw,1.5rem);line-height:1.4;color:var(--teal-900)}
+  .approche cite{display:block;margin-top:1rem;font-family:var(--sans);font-style:normal;font-weight:600;font-size:.95rem;color:var(--ink-soft)}
+
+  .zone{display:grid;grid-template-columns:1.6fr .9fr;gap:1.4rem;align-items:stretch}
+  .zone__map{position:relative;min-height:420px;border-radius:var(--radius);border:1px solid var(--line);box-shadow:var(--shadow-sm);z-index:0;overflow:hidden;background:var(--teal-50)}
+  .zone__map svg{display:block;width:100%;height:100%;min-height:420px}
+  .zone__info{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:1.7rem;box-shadow:var(--shadow-sm);display:flex;flex-direction:column}
+  .zone__addr{color:var(--ink-soft);margin:.3rem 0 1.1rem}
+  .zone__list{list-style:none;padding:0;margin:0 0 1.3rem;display:grid;gap:.5rem}
+  .zone__list li{position:relative;padding-left:1.6rem;color:var(--ink-soft);font-size:.96rem}
+  .zone__list li::before{content:"📍";position:absolute;left:0;font-size:.9rem}
+  .zone__info .btn{margin-top:auto}
+  .leaflet-container{font:inherit;border-radius:var(--radius)}
+
+  .infos{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem;margin-top:.5rem}
+  .info{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:1.4rem;box-shadow:var(--shadow-sm)}
+  .info h3{font-size:1.02rem;margin-bottom:.5rem}
+  .info p{color:var(--ink-soft);font-size:.92rem}
+  .info__ic{font-size:1.4rem;margin-bottom:.6rem}
+
+  .section--contact{background:linear-gradient(180deg,var(--teal-900),#0b3d3a);color:#eafaf7}
+  .contact{display:grid;grid-template-columns:.95fr 1.15fr;gap:clamp(1.6rem,4vw,3rem);align-items:start}
+  .section--contact .eyebrow{color:var(--teal-100)}
+  .section--contact h2{color:#fff}
+  .contact__intro>p{color:#bfe9e3;margin-top:.8rem;font-size:1.05rem}
+  .contact__direct{list-style:none;padding:0;margin:1.8rem 0 1rem;display:grid;gap:.9rem}
+  .contact__direct li{display:flex;align-items:center;gap:.7rem;color:#eafaf7}
+  .contact__direct .ic{width:30px;height:30px;fill:var(--teal-100);background:rgba(255,255,255,.08);border-radius:9px;padding:5px;flex:none}
+  .contact__direct a{color:#eafaf7}
+  .contact__note{font-size:.84rem;color:#9fd6cf;margin-top:1rem}
+  .form{background:#fff;color:var(--ink);border-radius:var(--radius-lg);padding:1.8rem;box-shadow:var(--shadow-md);display:grid;gap:1rem}
+  .form__row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  .form label{display:grid;gap:.35rem;font-size:.88rem;font-weight:600;color:var(--ink)}
+  .form input,.form textarea{font:inherit;font-weight:400;padding:.75rem .85rem;border:1px solid var(--line);border-radius:12px;background:var(--sand-50);color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  .form input:focus,.form textarea:focus{outline:none;border-color:var(--teal-500);box-shadow:0 0 0 3px rgba(20,184,166,.18);background:#fff}
+  .form textarea{resize:vertical}
+  .form__consent{grid-auto-flow:column;grid-template-columns:auto 1fr;align-items:start;gap:.6rem;font-weight:400;color:var(--ink-soft);font-size:.84rem}
+  .form__consent input{width:18px;height:18px;margin-top:2px;accent-color:var(--teal-600)}
+  .form__status{font-size:.92rem;font-weight:600;margin:0;min-height:1.2em}
+  .form__status.is-ok{color:var(--teal-700)}
+  .form__status.is-error{color:#c0392b}
+  .btn[disabled]{opacity:.6;cursor:progress}
+
+  .legal{background:var(--sand-100);border-top:1px solid var(--line)}
+  .legal__grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.4rem 2.4rem;margin-top:1.6rem}
+  .legal h3{font-size:1.02rem;color:var(--teal-800);margin-bottom:.5rem}
+  .legal p{color:var(--ink-soft);font-size:.9rem}
+  .legal a{color:var(--teal-700)}
+
+  .footer{background:#0b2f2c;color:#cfe9e5;padding:2.6rem 0}
+  .footer__inner{display:grid;grid-template-columns:1.4fr 1fr;gap:1.4rem 2rem;align-items:start}
+  .footer strong{color:#fff;font-family:var(--serif);font-size:1.05rem}
+  .footer p{color:#9dc7c1;font-size:.92rem;margin-top:.3rem}
+  .footer__links{display:flex;flex-wrap:wrap;gap:1.1rem}
+  .footer__links a{color:#cfe9e5;font-size:.92rem}
+  .footer__legal{grid-column:1/-1;border-top:1px solid rgba(255,255,255,.1);padding-top:1.2rem;font-size:.82rem;color:#86b3ad}
+
+  @media (max-width:960px){
+    .hero__inner{grid-template-columns:1fr}
+    .hero__card{max-width:460px}
+    .grid--soins{grid-template-columns:repeat(2,1fr)}
+    .zone{grid-template-columns:1fr}
+    .infos{grid-template-columns:repeat(2,1fr)}
+    .contact{grid-template-columns:1fr}
+  }
+  @media (max-width:720px){
+    .nav__links{display:none;position:absolute;top:68px;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;background:var(--sand-50);border-bottom:1px solid var(--line);padding:.5rem 22px 1rem}
+    .nav__links.is-open{display:flex}
+    .nav__links a{padding:.8rem 0;border-bottom:1px solid var(--line)}
+    .nav__links a.btn{margin-top:.6rem;justify-content:center}
+    .nav__toggle{display:block}
+    .grid--soins,.grid--team,.infos,.form__row,.legal__grid,.footer__inner{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  </style>
 </head>
 <body>
 
-  <!-- ===== Barre de navigation ===== -->
   <header class="nav" id="top">
     <div class="container nav__inner">
       <a href="#top" class="brand">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 100 100" width="34" height="34"><rect width="100" height="100" rx="24" fill="currentColor"/><path d="M50 26v48M26 50h48" stroke="#fff" stroke-width="11" stroke-linecap="round"/></svg>
-        </span>
+        <span aria-hidden="true"><svg viewBox="0 0 100 100" width="34" height="34"><rect width="100" height="100" rx="24" fill="currentColor"/><path d="M50 26v48M26 50h48" stroke="#fff" stroke-width="11" stroke-linecap="round"/></svg></span>
         <span class="brand__text">
           <strong>Elsa Quintin</strong>
-          <small>Infirmière libérale · Toulouse</small>
+          <small>Infirmière libérale D.E. · Toulouse</small>
         </span>
       </a>
       <nav class="nav__links" aria-label="Navigation principale">
         <a href="#soins">Les soins</a>
         <a href="#apropos">Le cabinet</a>
         <a href="#zone">Zone d'intervention</a>
+        <a href="#infos">Infos pratiques</a>
         <a href="#contact" class="btn btn--sm">Prendre contact</a>
       </nav>
       <button class="nav__toggle" aria-label="Ouvrir le menu" aria-expanded="false">
@@ -56,17 +216,18 @@
         <p class="eyebrow">Cabinet infirmier · Quartier des Chalets</p>
         <h1>Des soins infirmiers <em>attentifs</em>, à domicile et au cabinet.</h1>
         <p class="lead">
-          Elsa Quintin vous accompagne avec plus de 10 ans d'expérience et une
-          approche humaine du soin : prendre le temps, écouter, et suivre chaque
-          patient dans la durée — y compris pour les soins les plus complexes.
+          Elsa Quintin est infirmière libérale diplômée d'État. Avec plus de 10 ans
+          d'expérience, elle privilégie une approche du soin qui prend le temps :
+          écouter, accompagner et assurer le suivi de chaque patient dans la durée,
+          y compris pour les soins les plus complexes.
         </p>
         <div class="hero__cta">
-          <a href="#contact" class="btn btn--lg">Demander un soin</a>
-          <a href="#soins" class="btn btn--ghost btn--lg">Découvrir les soins</a>
+          <a href="#contact" class="btn btn--lg">Prendre contact</a>
+          <a href="#soins" class="btn btn--ghost btn--lg">Voir les soins proposés</a>
         </div>
         <ul class="hero__badges">
-          <li><span>10+</span> ans d'expérience</li>
-          <li><span>DU</span> en dialyse</li>
+          <li><span>10 ans +</span> d'expérience</li>
+          <li><span>DU dialyse</span> formation complémentaire</li>
           <li><span>Paris · Toulouse</span> parcours hospitalier</li>
         </ul>
       </div>
@@ -74,24 +235,15 @@
       <aside class="hero__card" aria-label="Informations pratiques">
         <div class="card__row">
           <svg viewBox="0 0 24 24" class="ic"><path d="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5Z"/></svg>
-          <div>
-            <strong>3 rue René Leduc</strong>
-            <span>31500 Toulouse — Les Chalets</span>
-          </div>
+          <div><strong>3 rue René Leduc</strong><span>31500 Toulouse — Les Chalets</span></div>
         </div>
         <div class="card__row">
           <svg viewBox="0 0 24 24" class="ic"><path d="M6.6 10.8a15.5 15.5 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11.4 11.4 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .58 3.6 1 1 0 0 1-.24 1Z"/></svg>
-          <div>
-            <strong>Sur rendez-vous</strong>
-            <span>Soins à domicile 7j/7</span>
-          </div>
+          <div><strong>Soins sur rendez-vous</strong><span>À domicile et au cabinet — sur prescription médicale</span></div>
         </div>
         <div class="card__row">
           <svg viewBox="0 0 24 24" class="ic"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 10.4 3.3 2-.8 1.3L11 13V6h2Z"/></svg>
-          <div>
-            <strong>Un suivi qui prend le temps</strong>
-            <span>Écoute et coordination des soins</span>
-          </div>
+          <div><strong>Permanence téléphonique</strong><span>Horaires à préciser (à compléter)</span></div>
         </div>
         <a href="#contact" class="btn btn--block">Nous contacter</a>
       </aside>
@@ -102,57 +254,56 @@
   <section class="section" id="soins">
     <div class="container">
       <header class="section__head">
-        <p class="eyebrow">Nos prestations</p>
-        <h2>Des soins complets, coordonnés avec vos médecins</h2>
-        <p class="section__sub">Sur prescription médicale, à votre domicile ou au cabinet. Elsa est spécialisée dans les prises en charge complexes.</p>
+        <p class="eyebrow">Les soins</p>
+        <h2>Les soins proposés au cabinet</h2>
+        <p class="section__sub">Sur prescription médicale, à votre domicile ou au cabinet. Cette présentation est fournie à titre d'information ; l'indication et la réalisation des soins relèvent de la prescription et de l'évaluation infirmière.</p>
       </header>
 
       <div class="grid grid--soins">
         <article class="soin">
           <div class="soin__ic">💉</div>
           <h3>Soins techniques</h3>
-          <p>Injections, perfusions, prises de sang, pansements simples et complexes, ablation de fils et d'agrafes.</p>
+          <p>Injections, perfusions, prises de sang, pansements simples, ablation de fils et d'agrafes.</p>
         </article>
         <article class="soin soin--star">
           <div class="soin__ic">🩺</div>
-          <h3>Soins complexes</h3>
-          <p>Plaies chroniques, stomies, chambres implantables, soins post-opératoires et suivi de pathologies lourdes.</p>
-          <span class="soin__tag">Spécialité d'Elsa</span>
+          <h3>Soins complexes &amp; chroniques</h3>
+          <p>Plaies chroniques, stomies, chambres implantables, soins post-opératoires et suivi de pathologies au long cours.</p>
         </article>
         <article class="soin">
           <div class="soin__ic">🫧</div>
-          <h3>Dialyse & néphrologie</h3>
-          <p>Prise en charge de la dialyse péritonéale et suivi des patients insuffisants rénaux — DU en dialyse.</p>
+          <h3>Dialyse &amp; néphrologie</h3>
+          <p>Suivi des patients dialysés et insuffisants rénaux. Elsa Quintin est titulaire d'un DU en dialyse.</p>
         </article>
         <article class="soin">
           <div class="soin__ic">💊</div>
-          <h3>Suivi & chronicité</h3>
+          <h3>Suivi des traitements</h3>
           <p>Préparation et administration des traitements, suivi du diabète (glycémie, insuline), surveillance clinique.</p>
         </article>
         <article class="soin">
           <div class="soin__ic">🤝</div>
-          <h3>Aide & accompagnement</h3>
-          <p>Toilettes, aide au maintien à domicile des personnes âgées ou dépendantes, coordination avec les aidants.</p>
+          <h3>Aide &amp; accompagnement</h3>
+          <p>Soins d'hygiène, aide au maintien à domicile des personnes âgées ou dépendantes, coordination avec les aidants.</p>
         </article>
         <article class="soin">
           <div class="soin__ic">📋</div>
-          <h3>Bilans & prévention</h3>
-          <p>Bilans de soins infirmiers (BSI), vaccination, éducation thérapeutique et conseils personnalisés.</p>
+          <h3>Bilans &amp; prévention</h3>
+          <p>Bilans de soins infirmiers (BSI), vaccination, éducation thérapeutique et surveillance à domicile.</p>
         </article>
       </div>
     </div>
   </section>
 
-  <!-- ===== À propos ===== -->
+  <!-- ===== Le cabinet ===== -->
   <section class="section section--alt" id="apropos">
     <div class="container apropos">
       <div class="apropos__intro">
         <p class="eyebrow">Le cabinet</p>
-        <h2>Deux infirmières, une même exigence : le soin bien fait</h2>
+        <h2>Deux infirmières libérales, au cœur des Chalets</h2>
         <p>
-          Le cabinet réunit deux infirmières libérales associées, au cœur du quartier
-          des Chalets. Ensemble, elles assurent une présence de proximité et une
-          continuité des soins, dans le respect et l'écoute de chacun.
+          Le cabinet réunit deux infirmières libérales diplômées d'État, associées,
+          dans le quartier des Chalets. Ensemble, elles assurent une continuité des
+          soins à domicile et au cabinet.
         </p>
       </div>
 
@@ -162,31 +313,31 @@
           <h3>Elsa Quintin</h3>
           <p class="person__role">Infirmière libérale — Diplômée d'État</p>
           <ul class="person__points">
-            <li>Plus de <strong>10 ans d'expérience</strong> auprès des patients</li>
+            <li>Plus de <strong>10 ans d'expérience</strong> infirmière</li>
             <li>Parcours hospitalier à <strong>Paris</strong> puis à Toulouse</li>
-            <li><strong>DU en dialyse</strong> — soins néphrologiques</li>
-            <li>Spécialiste des <strong>soins complexes</strong></li>
-            <li>Une conviction : <strong>prendre le temps</strong> avec chaque patient</li>
+            <li><strong>DU en dialyse</strong> (formation complémentaire)</li>
+            <li>Expérience des <strong>soins complexes</strong> et du suivi au long cours</li>
+            <li>N° RPPS : <em>[à compléter]</em></li>
           </ul>
         </article>
 
         <article class="person">
           <div class="person__avatar person__avatar--alt" aria-hidden="true">CP</div>
           <h3>Carole Pujol</h3>
-          <p class="person__role">Infirmière libérale — Associée</p>
+          <p class="person__role">Infirmière libérale — Diplômée d'État · Associée</p>
           <ul class="person__points">
-            <li>Associée du cabinet aux Chalets</li>
-            <li>Soins à domicile et au cabinet</li>
+            <li>Infirmière libérale associée du cabinet</li>
+            <li>Soins à domicile et au cabinet aux Chalets</li>
             <li>Continuité et coordination des prises en charge</li>
-            <li>Une même attention portée à chaque patient</li>
+            <li>N° RPPS : <em>[à compléter]</em></li>
           </ul>
         </article>
       </div>
 
-      <blockquote class="quote">
+      <blockquote class="approche">
         <p>« Bien soigner, c'est d'abord bien écouter. Nous prenons le temps qu'il faut,
            pour que chaque patient se sente en confiance, chez lui comme au cabinet. »</p>
-        <cite>— Elsa Quintin</cite>
+        <cite>— Elsa Quintin, notre approche du soin</cite>
       </blockquote>
     </div>
   </section>
@@ -196,12 +347,12 @@
     <div class="container">
       <header class="section__head">
         <p class="eyebrow">À domicile</p>
-        <h2>Notre zone d'intervention</h2>
-        <p class="section__sub">Nous intervenons à domicile autour du cabinet — du quartier des Chalets jusqu'aux abords de Jean Jaurès. Un doute sur votre adresse ? Écrivez-nous, nous vous répondrons.</p>
+        <h2>Secteur d'intervention</h2>
+        <p class="section__sub">Les soins à domicile sont assurés autour du cabinet — du quartier des Chalets jusqu'aux abords de Jean Jaurès, dans un rayon d'environ 1,5 km. En cas de doute sur votre adresse, contactez-nous.</p>
       </header>
 
       <div class="zone">
-        <div id="map" class="zone__map" role="img" aria-label="Carte de la zone d'intervention du cabinet, centrée sur le 3 rue René Leduc à Toulouse"></div>
+        <div id="map" class="zone__map" role="img" aria-label="Carte du secteur d'intervention, centrée sur le 3 rue René Leduc à Toulouse, rayon d'environ 1,5 km"></div>
         <div class="zone__info">
           <h3>Le cabinet</h3>
           <p class="zone__addr">3 rue René Leduc<br />31500 Toulouse — Les Chalets</p>
@@ -213,9 +364,41 @@
           </ul>
           <a class="btn btn--ghost btn--block" target="_blank" rel="noopener"
              href="https://www.google.com/maps/search/?api=1&query=3+rue+Ren%C3%A9+Leduc+31500+Toulouse">
-            Ouvrir l'itinéraire
+            Voir sur Google Maps
           </a>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Infos pratiques (tarifs, conventionnement, accès) ===== -->
+  <section class="section section--alt" id="infos">
+    <div class="container">
+      <header class="section__head">
+        <p class="eyebrow">Informations pratiques</p>
+        <h2>Tarifs, conventionnement et accès aux soins</h2>
+      </header>
+      <div class="infos">
+        <article class="info">
+          <div class="info__ic" aria-hidden="true">🧾</div>
+          <h3>Tarifs conventionnés</h3>
+          <p>Soins facturés selon la Nomenclature Générale des Actes Professionnels (NGAP) et les tarifs de l'Assurance Maladie.</p>
+        </article>
+        <article class="info">
+          <div class="info__ic" aria-hidden="true">💳</div>
+          <h3>Tiers payant</h3>
+          <p>Tiers payant pratiqué. Paiement possible par carte, chèque ou espèces.</p>
+        </article>
+        <article class="info">
+          <div class="info__ic" aria-hidden="true">🤲</div>
+          <h3>Accès aux soins</h3>
+          <p>Les soins sont dispensés à toute personne dans le respect de l'égalité d'accès, sans aucune discrimination.</p>
+        </article>
+        <article class="info">
+          <div class="info__ic" aria-hidden="true">🗣️</div>
+          <h3>Langues &amp; accessibilité</h3>
+          <p>Français. Informations d'accessibilité du cabinet à préciser <em>(à compléter)</em>.</p>
+        </article>
       </div>
     </div>
   </section>
@@ -225,9 +408,9 @@
     <div class="container contact">
       <div class="contact__intro">
         <p class="eyebrow">Prise de contact</p>
-        <h2>Demander un soin ou poser une question</h2>
-        <p>Décrivez la nature des soins dont vous avez besoin. Votre message est
-           envoyé directement au cabinet, qui vous recontacte au plus vite.</p>
+        <h2>Contacter le cabinet</h2>
+        <p>Une question ou une demande de soins ? Décrivez la nature des soins concernés.
+           Votre message est transmis directement au cabinet, qui vous recontacte.</p>
 
         <ul class="contact__direct">
           <li>
@@ -236,58 +419,83 @@
           </li>
           <li>
             <svg viewBox="0 0 24 24" class="ic"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5Z"/></svg>
-            <!-- ⚙️ Remplacez par l'adresse Gmail du cabinet -->
             <a href="mailto:contact@cabinet-elsa-quintin.fr" data-cabinet-email>contact@cabinet-elsa-quintin.fr</a>
           </li>
         </ul>
 
-        <p class="contact__note">Vos données ne servent qu'à traiter votre demande de soins et ne sont jamais transmises à des tiers.</p>
+        <p class="contact__note">En cas d'urgence médicale, composez le 15 (SAMU) ou le 112. Ce formulaire n'est pas destiné aux urgences.</p>
       </div>
 
       <form class="form" id="contact-form" novalidate>
-        <!-- ⚙️ CONFIGURATION : voir js/main.js (constante WEB3FORMS_KEY) -->
         <div class="form__row">
-          <label>Prénom
-            <input type="text" name="prenom" autocomplete="given-name" required />
-          </label>
-          <label>Nom
-            <input type="text" name="nom" autocomplete="family-name" required />
-          </label>
+          <label>Prénom<input type="text" name="prenom" autocomplete="given-name" required /></label>
+          <label>Nom<input type="text" name="nom" autocomplete="family-name" required /></label>
         </div>
-
         <label>Adresse (lieu du soin)
           <input type="text" name="adresse" autocomplete="street-address" placeholder="N°, rue, code postal, ville" required />
         </label>
-
         <div class="form__row">
-          <label>E-mail
-            <input type="email" name="email" autocomplete="email" required />
-          </label>
-          <label>Téléphone
-            <input type="tel" name="telephone" autocomplete="tel" inputmode="tel" required />
-          </label>
+          <label>E-mail<input type="email" name="email" autocomplete="email" required /></label>
+          <label>Téléphone<input type="tel" name="telephone" autocomplete="tel" inputmode="tel" required /></label>
         </div>
-
         <label>Votre message — nature des soins
-          <textarea name="message" rows="5" placeholder="Décrivez le soin dont vous avez besoin, la fréquence, et toute information utile (ordonnance, disponibilités…)." required></textarea>
+          <textarea name="message" rows="5" placeholder="Décrivez le soin concerné, la fréquence, et toute information utile (prescription, disponibilités…)." required></textarea>
         </label>
-
         <label class="form__consent">
           <input type="checkbox" name="consentement" required />
-          <span>J'accepte que ces informations soient transmises au cabinet pour être recontacté(e).</span>
+          <span>J'accepte que ces informations soient transmises au cabinet afin d'être recontacté(e). Elles ne sont utilisées qu'à cette fin (voir <a href="#legal" style="color:var(--teal-700)">informations légales</a>).</span>
         </label>
-
-        <!-- Anti-spam (honeypot) : ne pas remplir -->
         <input type="checkbox" name="botcheck" tabindex="-1" style="display:none" aria-hidden="true" />
-
         <button type="submit" class="btn btn--lg btn--block" id="submit-btn">Envoyer ma demande</button>
-
         <p class="form__status" id="form-status" role="status" aria-live="polite"></p>
       </form>
     </div>
   </section>
 
-  <!-- ===== Footer ===== -->
+  <!-- ===== Informations légales / RGPD ===== -->
+  <section class="section legal" id="legal">
+    <div class="container">
+      <header class="section__head" style="text-align:left;margin-bottom:0">
+        <p class="eyebrow">Informations légales</p>
+        <h2>Mentions légales &amp; données personnelles</h2>
+      </header>
+      <div class="legal__grid">
+        <div>
+          <h3>Éditrices du site</h3>
+          <p>Cabinet infirmier Elsa Quintin &amp; Carole Pujol, infirmières libérales diplômées d'État,
+             3 rue René Leduc, 31500 Toulouse. Inscrites au tableau de l'Ordre national des infirmiers
+             (Conseil départemental de la Haute-Garonne). N° RPPS et n° d'inscription : <em>[à compléter]</em>.</p>
+        </div>
+        <div>
+          <h3>Directrice de la publication</h3>
+          <p>Elsa Quintin. Contact : <a href="mailto:contact@cabinet-elsa-quintin.fr" data-cabinet-email>contact@cabinet-elsa-quintin.fr</a>.</p>
+        </div>
+        <div>
+          <h3>Hébergement</h3>
+          <p>Site hébergé par <em>[nom et coordonnées de l'hébergeur à compléter]</em>.</p>
+        </div>
+        <div>
+          <h3>Données personnelles (RGPD)</h3>
+          <p>Les informations saisies dans le formulaire de contact servent uniquement à traiter
+             votre demande et à vous recontacter. Elles sont destinées au seul cabinet, ne sont
+             jamais cédées à des tiers et sont conservées le temps nécessaire au traitement de la
+             demande. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et
+             de suppression de vos données en écrivant à l'adresse ci-dessus.</p>
+        </div>
+        <div>
+          <h3>Secret professionnel</h3>
+          <p>Les infirmières sont soumises au secret professionnel. Merci de ne pas transmettre
+             d'informations médicales sensibles via ce formulaire au-delà de ce qui est nécessaire
+             à la prise de contact.</p>
+        </div>
+        <div>
+          <h3>Cookies</h3>
+          <p>Ce site n'utilise pas de cookie de suivi ni d'outil de mesure d'audience publicitaire.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <footer class="footer">
     <div class="container footer__inner">
       <div>
@@ -298,14 +506,117 @@
         <a href="#soins">Les soins</a>
         <a href="#apropos">Le cabinet</a>
         <a href="#zone">Zone d'intervention</a>
+        <a href="#infos">Infos pratiques</a>
         <a href="#contact">Contact</a>
+        <a href="#legal">Mentions légales</a>
       </nav>
-      <p class="footer__legal">Infirmières libérales Diplômées d'État · Soins sur prescription médicale.</p>
+      <p class="footer__legal">Infirmières libérales diplômées d'État, inscrites à l'Ordre national des infirmiers · Soins réalisés sur prescription médicale · En cas d'urgence, appelez le 15.</p>
     </div>
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="js/main.js"></script>
+  <script>
+  /* ===========================================================
+     CONFIGURATION À COMPLÉTER (voir README) :
+     - WEB3FORMS_KEY : clé Web3Forms pour recevoir les demandes
+       du formulaire dans la boîte Gmail du cabinet (web3forms.com)
+     - CABINET_EMAIL : adresse Gmail réelle du cabinet
+     =========================================================== */
+  const WEB3FORMS_KEY = "REMPLACER_PAR_VOTRE_ACCESS_KEY";
+  const CABINET_EMAIL = "contact@cabinet-elsa-quintin.fr";
+  const CABINET_COORDS = [43.6108, 1.4566];   // 3 rue René Leduc, Toulouse
+  const RAYON_METRES = 1500;                   // rayon d'intervention (1,5 km)
+
+  /* --- Menu mobile --- */
+  (function(){
+    const t=document.querySelector(".nav__toggle"), l=document.querySelector(".nav__links");
+    if(!t||!l)return;
+    t.addEventListener("click",()=>{const o=l.classList.toggle("is-open");t.setAttribute("aria-expanded",String(o));});
+    l.querySelectorAll("a").forEach(a=>a.addEventListener("click",()=>{l.classList.remove("is-open");t.setAttribute("aria-expanded","false");}));
+  })();
+
+  /* --- E-mail synchronisé avec la config --- */
+  document.querySelectorAll("[data-cabinet-email]").forEach(el=>{
+    el.textContent=CABINET_EMAIL; el.setAttribute("href","mailto:"+CABINET_EMAIL);
+  });
+
+  /* --- Carte : Leaflet si disponible, sinon carte statique (SVG) --- */
+  (function(){
+    const el=document.getElementById("map");
+    if(!el)return;
+    if(typeof L!=="undefined"){
+      const map=L.map("map",{center:CABINET_COORDS,zoom:14,scrollWheelZoom:false});
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,
+        attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(map);
+      L.circle(CABINET_COORDS,{radius:RAYON_METRES,color:"#0d9488",weight:2,fillColor:"#14b8a6",fillOpacity:.14}).addTo(map);
+      const icon=L.divIcon({className:"cabinet-pin",html:'<div style="background:#0d9488;width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:3px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.3)"></div>',iconSize:[26,26],iconAnchor:[13,26]});
+      L.marker(CABINET_COORDS,{icon,title:"Cabinet Elsa Quintin"}).addTo(map)
+        .bindPopup("<strong>Cabinet Elsa Quintin &amp; Carole Pujol</strong><br>3 rue René Leduc, 31500 Toulouse");
+      map.fitBounds(L.latLng(CABINET_COORDS).toBounds(RAYON_METRES*2.4));
+      map.on("click",()=>map.scrollWheelZoom.enable());
+      map.on("mouseout",()=>map.scrollWheelZoom.disable());
+    }else{
+      /* Carte statique de secours (aucune dépendance externe) */
+      el.innerHTML =
+        '<svg viewBox="0 0 600 440" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Secteur d\'intervention autour du cabinet">'
+        +'<defs><radialGradient id="g" cx="50%" cy="46%" r="55%">'
+        +'<stop offset="0%" stop-color="#e6fbf6"/><stop offset="100%" stop-color="#d3f2ea"/></radialGradient></defs>'
+        +'<rect width="600" height="440" fill="url(#g)"/>'
+        +'<g stroke="#bfe4da" stroke-width="6" fill="none" opacity=".8">'
+        +'<path d="M-20 120 L620 80"/><path d="M-20 250 L620 300"/><path d="M120 -20 L180 460"/>'
+        +'<path d="M330 -20 L300 460"/><path d="M470 -20 L520 460"/><path d="M-20 360 L620 380"/></g>'
+        +'<circle cx="300" cy="205" r="150" fill="#14b8a6" fill-opacity="0.12" stroke="#0d9488" stroke-width="2" stroke-dasharray="7 6"/>'
+        +'<circle cx="300" cy="205" r="150" fill="none" stroke="#0d9488" stroke-width="1" opacity=".4"/>'
+        +'<g font-family="Inter,system-ui,sans-serif" font-size="13" fill="#0f766e" font-weight="600">'
+        +'<text x="300" y="70" text-anchor="middle">Les Chalets</text>'
+        +'<text x="300" y="378" text-anchor="middle">Jean Jaurès</text>'
+        +'<text x="470" y="200" text-anchor="middle">Bd de Strasbourg</text>'
+        +'<text x="140" y="215" text-anchor="middle">Concorde</text></g>'
+        +'<g transform="translate(300 205)">'
+        +'<path d="M0 -30 C-16 -30 -26 -18 -26 -4 C-26 14 0 34 0 34 C0 34 26 14 26 -4 C26 -18 16 -30 0 -30 Z" fill="#0d9488" stroke="#fff" stroke-width="3"/>'
+        +'<circle cx="0" cy="-6" r="8" fill="#fff"/></g>'
+        +'<text x="300" y="258" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="11" fill="#134e4a" font-weight="700">Cabinet · 3 rue René Leduc</text>'
+        +'<g transform="translate(20 408)"><rect x="0" y="-16" width="140" height="24" rx="12" fill="#fff" opacity=".85"/>'
+        +'<text x="14" y="1" font-family="Inter,system-ui,sans-serif" font-size="12" fill="#0f766e" font-weight="700">Rayon ≈ 1,5 km</text></g>'
+        +'</svg>';
+    }
+  })();
+
+  /* --- Formulaire → Gmail (Web3Forms) + secours mailto --- */
+  (function(){
+    const form=document.getElementById("contact-form"),
+          status=document.getElementById("form-status"),
+          btn=document.getElementById("submit-btn");
+    if(!form)return;
+    const keyOk=WEB3FORMS_KEY && !WEB3FORMS_KEY.startsWith("REMPLACER");
+    const setStatus=(m,t)=>{status.textContent=m;status.className="form__status"+(t?" is-"+t:"");};
+    const mailto=d=>{
+      const s=`Demande de soins — ${d.prenom} ${d.nom}`;
+      const b=`Prénom : ${d.prenom}\nNom : ${d.nom}\nAdresse : ${d.adresse}\nE-mail : ${d.email}\nTéléphone : ${d.telephone}\n\nMessage :\n${d.message}\n`;
+      return `mailto:${CABINET_EMAIL}?subject=${encodeURIComponent(s)}&body=${encodeURIComponent(b)}`;
+    };
+    form.addEventListener("submit",async e=>{
+      e.preventDefault();
+      if(form.botcheck&&form.botcheck.checked)return;
+      if(!form.checkValidity()){form.reportValidity();return;}
+      const d=Object.fromEntries(new FormData(form).entries());
+      if(!keyOk){setStatus("Ouverture de votre application e-mail…","ok");window.location.href=mailto(d);return;}
+      btn.disabled=true;setStatus("Envoi en cours…",null);
+      try{
+        const res=await fetch("https://api.web3forms.com/submit",{method:"POST",
+          headers:{"Content-Type":"application/json",Accept:"application/json"},
+          body:JSON.stringify({access_key:WEB3FORMS_KEY,
+            subject:`Nouvelle demande de soins — ${d.prenom} ${d.nom}`,
+            from_name:"Site du cabinet Elsa Quintin",
+            "Prénom":d.prenom,"Nom":d.nom,"Adresse":d.adresse,"E-mail":d.email,"Téléphone":d.telephone,"Message":d.message})});
+        const j=await res.json();
+        if(res.ok&&j.success){setStatus("Merci ! Votre demande a bien été envoyée. Le cabinet vous recontacte au plus vite.","ok");form.reset();}
+        else throw new Error(j.message||"Échec de l'envoi");
+      }catch(err){setStatus("L'envoi automatique a échoué. Ouverture de votre application e-mail…","error");window.location.href=mailto(d);}
+      finally{btn.disabled=false;}
+    });
+  })();
+  </script>
 </body>
 </html>

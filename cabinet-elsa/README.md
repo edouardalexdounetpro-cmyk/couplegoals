@@ -1,71 +1,77 @@
 # Site du cabinet — Elsa Quintin, infirmière libérale à Toulouse
 
-Landing page moderne pour le cabinet d'infirmières libérales situé au
+Landing page pour le cabinet d'infirmières libérales situé au
 **3 rue René Leduc, 31500 Toulouse** (quartier des Chalets).
 
-Site 100 % statique (HTML / CSS / JS), sans serveur à gérer.
+Site **en un seul fichier** (`index.html`), sans serveur ni dépendance à installer :
+tout le style et le code sont intégrés. Il suffit d'ouvrir le fichier dans un
+navigateur ou de le déposer chez un hébergeur.
 
-## Contenu
+## Conformité déontologique (Ordre national des infirmiers)
 
-- `index.html` — la page (hero, soins, présentation d'Elsa & Carole, carte, contact)
-- `css/styles.css` — le design
-- `js/main.js` — la carte (Leaflet) et le formulaire de contact
+Le contenu a été rédigé pour respecter le code de déontologie des infirmiers
+(art. R.4312-76 s.) et la charte de l'ONI sur les sites internet :
 
-## ⚙️ À configurer (2 minutes)
+- **Ton sobre et factuel**, sans publicité ni démarchage
+- **Pas** de comparaison avec d'autres cabinets, ni de superlatifs, ni de
+  témoignages de patients
+- **Pas** de titre non reconnu (le mot « spécialiste » a été évité ; le DU
+  dialyse est présenté comme une formation complémentaire)
+- Informations autorisées présentes : identité, D.E., formations, conditions
+  d'exercice, secteur géographique, actes présentés factuellement, associée
+- Mentions obligatoires ajoutées : **tarifs / conventionnement**, moyens de
+  paiement, **égalité d'accès aux soins**, **mentions légales**, **RGPD**,
+  rappel des urgences (15)
 
-Tout se passe en haut de **`js/main.js`** :
+> ⚠️ Ce travail vise la conformité mais ne remplace pas une validation par le
+> Conseil départemental de l'Ordre (31), qui peut être sollicité pour avis.
+
+## ⚙️ À compléter avant mise en ligne
+
+Tout est en haut de la balise `<script>` dans `index.html`, ou signalé par
+`[à compléter]` dans le texte :
 
 ### 1. Recevoir les demandes du formulaire dans Gmail
 
 Le formulaire utilise **[Web3Forms](https://web3forms.com)** (gratuit, sans serveur) :
 
 1. Aller sur https://web3forms.com
-2. Saisir l'adresse **Gmail du cabinet** → une clé (« Access Key ») est envoyée par mail
-3. Coller cette clé dans `js/main.js` :
-   ```js
-   const WEB3FORMS_KEY = "votre-access-key-ici";
-   ```
+2. Saisir l'adresse **Gmail du cabinet** → une clé (« Access Key ») arrive par mail
+3. La coller dans `index.html` : `const WEB3FORMS_KEY = "votre-cle";`
 
-Chaque demande envoyée depuis le site arrive alors **directement dans la boîte Gmail**.
+Les demandes arrivent alors **directement dans la boîte Gmail**. Sans clé, le
+formulaire ouvre l'application e-mail du visiteur (secours automatique).
 
-> Tant que la clé n'est pas renseignée, le formulaire ouvre automatiquement
-> l'application e-mail du visiteur avec le message pré-rempli (solution de secours).
+### 2. Adresse e-mail du cabinet
 
-### 2. Adresse e-mail affichée
+`const CABINET_EMAIL = "adresse-du-cabinet@gmail.com";`
 
-```js
-const CABINET_EMAIL = "adresse-du-cabinet@gmail.com";
-```
+### 3. Informations `[à compléter]` dans le texte
 
-Utilisée pour le lien e-mail affiché sur la page et le secours « mailto ».
+- N° RPPS d'Elsa et de Carole + n° d'inscription à l'Ordre (31)
+- Horaires de permanence téléphonique
+- Accessibilité du cabinet (accès PMR, etc.)
+- Coordonnées de l'hébergeur (mentions légales)
 
-### 3. (Optionnel) Ajuster la carte
+### 4. (Optionnel) Ajuster la carte
 
-```js
-const CABINET_COORDS = [43.6108, 1.4566]; // position du cabinet
-const RAYON_METRES   = 1150;              // rayon d'intervention affiché
-```
-
-Les coordonnées correspondent à la rue René Leduc ; on peut les affiner au besoin.
+`const CABINET_COORDS = [43.6108, 1.4566];` et `const RAYON_METRES = 1500;`
 
 ## Voir le site en local
 
 ```bash
 cd cabinet-elsa
-python3 -m http.server 8000
-# puis ouvrir http://localhost:8000
+python3 -m http.server 8000   # puis http://localhost:8000
 ```
 
 ## Mettre en ligne
 
-N'importe quel hébergement de site statique convient. Le plus simple :
+Un seul fichier `index.html` à déposer : **Netlify**, **Vercel**, **GitHub Pages**,
+ou tout hébergement classique. Un nom de domaine (ex. `cabinet-quintin-toulouse.fr`)
+pourra y être associé.
 
-- **Netlify** ou **Vercel** : glisser-déposer le dossier `cabinet-elsa/`, ou connecter le dépôt
-- **GitHub Pages** : activer Pages sur la branche, dossier `cabinet-elsa/`
+## À faire ensuite (idées)
 
-## À faire ensuite (idées d'évolutions)
-
-- Vraies photos du cabinet / des infirmières
+- Vraies photos du cabinet
 - Numéro de téléphone direct + horaires précis
-- Nom de domaine personnalisé (ex. `cabinet-quintin-toulouse.fr`)
-- Mentions légales / politique de confidentialité (RGPD)
+- Validation du contenu par le Conseil de l'Ordre (31)
